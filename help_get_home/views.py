@@ -47,27 +47,34 @@ class ArgumentException(Exception):
     def __init__(self,errors):
         Exception.__init__(self)
         self.errors = errors
+class TokenException(Exception):
+    def __init__(self,errors):
+        Exception.__init__(self)
+        self.errors = errors
 def createtoken(phone):
     try:  
         user = User.objects.get(username = phone)
         if user:
-            key = default_token_generator.make_token(user)
-            token = Token(key=key,user=user,created = datetime.datetime.now())
-            token.save()
-            return key
+            token,created = Token.objects.get_or_create(user=user)
+            if not created:
+                key = default_token_generator.make_token(user)
+                created = datetime.datetime.now()
+                Token.objects.filter(user=user).update(key=key,created=created)
+                return key
+            return token.key
         else:
-            return ""
+            return "not user"
     except Exception, e:  
-        return ""
+        return str(e)
 
 def checktoken(user_id,key):
     try:
-        token = Token.objects.get(key=key,user_id=user_id)
+        token = Token.objects.get(user_id=user_id,key=key)
         return True
-    except Token.DoesNotExists:
-        return False
+    except Token.DoesNotExist, e :
+        raise TokenException("token not exists")
     except Exception, e:
-        return False
+        raise TokenExcetion("token exception:" + str(e))
   
 class PictureForm(forms.Form):   
     imagefile = forms.ImageField()  
@@ -158,6 +165,9 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
     column_name = ['composite','-srv_attitude','-srv_contents','-srv_speed','-order_num','-recommend']
     response =  OrderedDict()
     try:
+        user_id = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(user_id,key)
         m1 = re.match(r'(^\d{1,2}$)',srv_sub_type)
         m2 = re.match(r'(^\d{1,2}$)',sort_type)
         m3 = re.match(r'(^\d+$)',page_num)
@@ -166,10 +176,17 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
             raise ArgumentException("invalid argument:srv_sub_type") 
         if m2 == None  :
             raise ArgumentException("invalid argument:sort_type") 
+        if m3 == None  :
+            raise ArgumentException("invalid argument:page_num") 
+        if m4 == None  :
+            raise ArgumentException("invalid argument:page_size") 
         if sort_type == '0':
-            shop_info = ShopInfo.objects.filter(srv_sub_type=srv_sub_type,verify_status=1,status=1)
+            shop_info = ShopInfo.objects.filter(srv_sub_type__contains=srv_sub_type,verify_status=1,status=1)
         else:
-            shop_info = ShopInfo.objects.filter(srv_sub_type=srv_sub_type,verify_status=1,status=1).order_by(column_name[int(sort_type)])
+            shop_info = ShopInfo.objects.filter(srv_sub_type__contains=srv_sub_type,verify_status=1,status=1).order_by(column_name[int(sort_type)])
+        if  int(page_num)==0  and int(page_size)==0:
+            page_size = shop_info.count()
+            page_num = 1
         if shop_info:
             p = Paginator(shop_info,page_size)   
             if int(page_num) > p.num_pages:    
@@ -187,6 +204,7 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
     finally:
         if not response.has_key('data'):
             response['data'] = ''
+        response['page_size'] = shop_info.count()
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 @api_view()
@@ -198,9 +216,10 @@ def login(request,phone,password):
             user_info =  UserInfo.objects.filter(phone=phone)
             if user_info :
                 if password == user_info[0].pwd:
+                    auth_user = User.objects.get(username=phone)
+                    auth_user.last_login = datetime.datetime.now()
+                    auth_user.save()
                     key = createtoken(phone)
-                    if key =="":
-                        key="create token failed"
                     response['result'] = 'success'
                     response['user_id'] = user_info[0].user_id
                     response['key'] = key
@@ -233,14 +252,18 @@ def register(request):
                                  password=request.data['pwd'], \
                                  is_staff=1,is_active=1,is_superuser=0)
                 auth_user.save()
+                key = createtoken(request.data['phone'])
                 response['result'] = 'success'
                 response['user_id'] = user_info.user_id 
+                response['key'] = key
             except UserInfo.DoesNotExist:
                 response['result'] = 'db error'
                 response['user_id'] = 0
         else:
             response['result'] = '用户已存在'
             response['user_id'] = 0
+        if not response.has_key('key'):
+            response['key'] = ''
         json= JSONRenderer().render(response)
         return HttpResponse(json)
     else:
