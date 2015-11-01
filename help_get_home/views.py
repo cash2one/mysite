@@ -72,9 +72,9 @@ def checktoken(user_id,key):
         token = Token.objects.get(user_id=user_id,key=key)
         return True
     except Token.DoesNotExist, e :
-        raise TokenException("token not exists")
+        raise Exception("token not exists")
     except Exception, e:
-        raise TokenExcetion("token exception:" + str(e))
+        raise Excetion("token exception:" + str(e))
   
 class PictureForm(forms.Form):   
     imagefile = forms.ImageField()  
@@ -435,6 +435,11 @@ def getallproduct(request,srv_sub_type,sort_type,page_num,page_size):
     response =  OrderedDict()
     column_name = ['composite','-sales','-evaluate']
     try:
+        user_id = ""
+        key = ""
+        user_id = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(user_id,key)
         m1 = re.match(r'(^\d{1,2}$)',srv_sub_type)
         if m1 == None  :
             raise ArgumentException("invalid argument:srv_sub_type") 
@@ -450,10 +455,13 @@ def getallproduct(request,srv_sub_type,sort_type,page_num,page_size):
         m4 = re.match(r'(^\d{1,2}$)',page_size)
         if m4 == None  :
             raise ArgumentException("invalid argument:page_size") 
-        if int(sort_type) == 0:
-            product_info =  ProductInfo.objects.filter(srv_sub_type=srv_sub_type,verify_status=1,status=1)
-        else:
+        if int(sort_type) <>  0:
             product_info = ProductInfo.objects.filter(srv_sub_type=srv_sub_type,verify_status=1,status=1).order_by(column_name[int(sort_type)])
+        else:
+            product_info =  ProductInfo.objects.filter(srv_sub_type=srv_sub_type,verify_status=1,status=1)
+        if  int(page_num)==0  and int(page_size)==0:
+            page_size = product_info.count()
+            page_num = 1
         if product_info:
             p = Paginator(product_info,page_size)   
             if int(page_num) > p.num_pages:    
@@ -463,7 +471,9 @@ def getallproduct(request,srv_sub_type,sort_type,page_num,page_size):
                 response['result'] = 'success'
                 response['data'] = serializer.data
         else:
-            response['result'] = '商品还未上线，敬请期待'
+            response['result'] = '此类商品还未上线，敬请期待'
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except ArgumentException, e:
         response['result']  = e.errors
     except Exception, e:
