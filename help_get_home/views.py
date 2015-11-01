@@ -549,6 +549,11 @@ def getmyshop(request,user_id):
 def getproductbyshop(request,shop_id,page_num,page_size):
     response =  OrderedDict()
     try:
+        user_id = ""
+        key = ""
+        user_id = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(user_id,key)
         m1 = re.match(r'(^\d{1,2}$)',shop_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:shop_id") 
@@ -561,6 +566,9 @@ def getproductbyshop(request,shop_id,page_num,page_size):
         if m3 == None  :
             raise ArgumentException("invalid argument:page_size") 
         product_info = ProductInfo.objects.filter(shop_id=shop_id,verify_status=1,status=1)
+        if  int(page_num)==0  and int(page_size)==0:
+            page_size = product_info.count()
+            page_num = 1
         if product_info:
             p = Paginator(product_info,page_size)   
             if int(page_num) > p.num_pages:    
@@ -571,6 +579,8 @@ def getproductbyshop(request,shop_id,page_num,page_size):
                 response['data'] = serializer.data
         else:
             response['result'] = '店铺商品还未上线，敬请期待'
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except ArgumentException, e:
         response['result']  = e.errors
     except Exception, e:
