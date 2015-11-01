@@ -34,6 +34,11 @@ class ShopSerializer(serializers.HyperlinkedModelSerializer):
                   'srv_contents','order_num','shop_desc'
                  )
 
+class MyShopSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = ShopInfo
+        fields = ('shop_id','shop_name','shop_url','srv_sub_type','level' \
+                 )
 class UnLicenseShoperSerializer(serializers.HyperlinkedModelSerializer):
     srv_attitude = serializers.IntegerField(required=False,default=0)
     srv_speed = serializers.IntegerField(required=False,default=0)

@@ -24,7 +24,7 @@ from rest_framework.authtoken.models import Token
 from help_get_home.serializers import  ClassifySerializer,UserSerializer,ShopSerializer, \
         ProductSerializer,UnLicenseShoperSerializer,LicenseShoperSerializer,SrvLimitSerializer, \
         AreaSerializer,MyShopSerializer,CitySerializer,DistrictSerializer,AddrSerializer,MyAddrSerializer,    \
-        OrderSerializer,MyOrderSerializer,UserCommentSerializer,AllCommentSerializer
+        OrderSerializer,MyOrderSerializer,UserCommentSerializer,AllCommentSerializer,MyShopSerializer
 
 
 
@@ -525,7 +525,7 @@ def getmyshop(request,user_id):
             raise ArgumentException("invalid argument:user_id") 
         shop_info = ShopInfo.objects.filter(user_id=user_id,verify_status=1,status=1)
         if shop_info:
-            serializer = ShopSerializer(shop_info,many = True)
+            serializer = MyShopSerializer(shop_info,many = True)
             response['result'] = 'success'
             response['data'] = serializer.data
         else:
