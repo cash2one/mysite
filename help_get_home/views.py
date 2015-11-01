@@ -165,6 +165,8 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
     column_name = ['composite','-srv_attitude','-srv_contents','-srv_speed','-order_num','-recommend']
     response =  OrderedDict()
     try:
+        user_id = ""
+        key = ""
         user_id = request.META['HTTP_USERID']
         key = request.META['HTTP_KEY']
         checktoken(user_id,key)
@@ -197,6 +199,8 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
                 response['data'] = serializer.data
         else:
             response['result'] = '该类型服务暂时没相关店铺，敬请期待'
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except ArgumentException, e:
         response['result']  = e.errors
     except Exception, e:
@@ -204,7 +208,6 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
     finally:
         if not response.has_key('data'):
             response['data'] = ''
-        response['page_size'] = shop_info.count()
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 @api_view()
@@ -713,7 +716,7 @@ def checkisshoper(request,user_id):
     try:
         shop_info = ShopInfo.objects.get(user_id=user_id,status=1)
         response['result'] = shoper_status[str(shop_info.verify_status)]
-    except ShopInfo.DoesNotExists, e:
+    except ShopInfo.DoesNotExist, e:
             response['result'] = '用户未注册成为商家'
     except Exception, e:
         response['result'] = str(e)
