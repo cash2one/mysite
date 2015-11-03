@@ -431,7 +431,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 '''
 @api_view()
-def getallproduct(request,srv_sub_type,sort_type,page_num,page_size):
+def getshopproduct(request,shop_id,sort_type,page_num,page_size):
     response =  OrderedDict()
     column_name = ['composite','-sales','-evaluate']
     try:
@@ -442,7 +442,7 @@ def getallproduct(request,srv_sub_type,sort_type,page_num,page_size):
         checktoken(user_id,key)
         m1 = re.match(r'(^\d{1,2}$)',srv_sub_type)
         if m1 == None  :
-            raise ArgumentException("invalid argument:srv_sub_type") 
+            raise ArgumentException("invalid argument:shop_id") 
 
         m2 = re.match(r'(^\d{1,2}$)',sort_type)
         if m2 == None  :
@@ -456,9 +456,9 @@ def getallproduct(request,srv_sub_type,sort_type,page_num,page_size):
         if m4 == None  :
             raise ArgumentException("invalid argument:page_size") 
         if int(sort_type) <>  0:
-            product_info = ProductInfo.objects.filter(srv_sub_type=srv_sub_type,verify_status=1,status=1).order_by(column_name[int(sort_type)])
+            product_info = ProductInfo.objects.filter(shop_id=shop_id,verify_status=1,status=1).order_by(column_name[int(sort_type)])
         else:
-            product_info =  ProductInfo.objects.filter(srv_sub_type=srv_sub_type,verify_status=1,status=1)
+            product_info =  ProductInfo.objects.filter(shop_id=shop_id,verify_status=1,status=1)
         if  int(page_num)==0  and int(page_size)==0:
             page_size = product_info.count()
             page_num = 1
