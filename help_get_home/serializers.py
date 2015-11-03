@@ -29,7 +29,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 class ShopSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ShopInfo
-        fields = ('shop_name','shop_url','type','entity','level', \
+        fields = ('shop_id','shop_name','shop_url','type','entity','level', \
                   'shop_address','srv_attitude','srv_speed', \
                   'srv_contents','order_num','shop_desc'
                  )
