@@ -440,7 +440,7 @@ def getshopproduct(request,shop_id,sort_type,page_num,page_size):
         user_id = request.META['HTTP_USERID']
         key = request.META['HTTP_KEY']
         checktoken(user_id,key)
-        m1 = re.match(r'(^\d{1,2}$)',srv_sub_type)
+        m1 = re.match(r'(^\d{1,2}$)',shop_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:shop_id") 
 
