@@ -1105,31 +1105,30 @@ def addusercomment(request):
 ****************************用户评价界面界面****************************
 '''
 @api_view()
-def getusercomment(request,user_id):
+def getusercomment(request,product_id):
     response =  OrderedDict()
     try:
-        m1 = re.match(r'(^\d{1,11}$)',user_id)
+        m1 = re.match(r'(^\d{1,11}$)',product_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:user_id") 
-        shop_infos = ShopInfo.objects.filter(user_id=user_id)
-        shop_list=[0]
-        #for myshop in shop_infos:
-        shop_list.append(shop_infos[0].shop_id)
-        user_comments = UserComment.objects.filter(shop_id__in=shop_list,status=1)
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(uid,key)
+        user_comments = UserComment.objects.filter(product_id=product_id,status=1)
         comment_list=[]
         if user_comments:
             for temp in user_comments:
                 comment_dict = OrderedDict()
-                user_info = UserInfo.objects.get(temp.user_id)
+                user_info = UserInfo.objects.get(user_id=temp.user_id)
                 comment_dict['comment_id'] = temp.id
                 comment_dict['user_nick'] = user_info.nick
                 comment_dict['match_desc'] = temp.match_desc
                 comment_dict['comment'] = temp.comment
                 comment_list.append(comment_dict)
-            serializer = AllCommentSerializer(data=comment_list,many = True)
-            if serializer.is_valid():
-                response['result'] = 'success'
-                response['data'] = serializer.data
+            response['result'] = 'success'
+            response['data'] = comment_list
         else:
             response['result'] = '没有相应的评论'
     except ArgumentException, e:           
@@ -1138,7 +1137,7 @@ def getusercomment(request,user_id):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = ''
+            response['data'] = []
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 @api_view()
