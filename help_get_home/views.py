@@ -816,10 +816,19 @@ def updateshopdesc(request):
 def updateshopicon(request):
     response =  OrderedDict()
     try:
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(uid,key)
         shop_info = ShopInfo.objects.get(shop_id=request.data['shop_id'])
+        if int(uid)<>shop_info.user_id:
+            raise Exception,"Permission Denied"
         shop_info.shop_url = request.data['shop_url']
         shop_info.save()
         response['result'] = 'success'
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except ShopInfo.DoesNotExist:
         response['result'] = '店铺不存在'
     except Exception,e:
