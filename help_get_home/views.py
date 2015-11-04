@@ -936,11 +936,18 @@ def updateorderstatus(request):
     response =  OrderedDict()
     current_status = {'1':0,'2':1,'3':2}
     try:
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(uid,key)
         next_status = str(request.data['order_status'])
         m= re.match(r'([0-3])',next_status)
         if m == None  :
             raise ArgumentException("invalid argument:order_status only can be 0-3") 
         order_info = SaleOrder.objects.get(order_id=request.data['order_id'],status=1)
+        if int(uid)<>order_info.user_id:
+            raise Exception,"Permission Denied"
         if order_info.order_status <> current_status[next_status]:
             response['result'] = '当前订单状态不支持此操作'
         else:
@@ -951,6 +958,8 @@ def updateorderstatus(request):
                 product_info = ProductInfo.objects.get(product_id = order_info.product_id)
                 product_info.sales = product_info.sales + 1
                 product_info.save()
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except ArgumentException, e:           
         response['result'] = e.errors
     except SaleOrder.DoesNotExist:
