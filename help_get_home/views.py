@@ -1023,6 +1023,13 @@ def getshoperorder(request,user_id,order_status):
         m2 = re.match(r'([0-3])',order_status)
         if m2 == None  :
             raise ArgumentException("invalid argument:order_status") 
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(uid,key)
+        if uid<>user_id:
+            raise Exception,"Permission Denied"
         shop_infos = ShopInfo.objects.filter(user_id=user_id)
         shop_list=[]
         for myshop in shop_infos:
@@ -1054,13 +1061,15 @@ def getshoperorder(request,user_id,order_status):
                 response['data'] = serializer.data
         else:
             response['result'] = '没有相应的订单'
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except ArgumentException, e:           
         response['result'] = e.errors
     except Exception, e:
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = ''
+            response['data'] = []
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 '''
