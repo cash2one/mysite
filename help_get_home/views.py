@@ -139,7 +139,7 @@ def getsrvtype(request,srv_type):
         response['data'] = serializer.data
     else:
         response['result'] = '没有对应的分类信息'
-        response['data'] = ''
+        response['data'] = classify_info
     json= JSONRenderer().render(response)
     return HttpResponse(json)
 @api_view()
@@ -165,6 +165,7 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
     column_name = ['composite','-srv_attitude','-srv_contents','-srv_speed','-order_num','-recommend']
     response =  OrderedDict()
     try:
+        shop_info = []
         user_id = ""
         key = ""
         user_id = request.META['HTTP_USERID']
@@ -199,6 +200,7 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
                 response['data'] = serializer.data
         else:
             response['result'] = '该类型服务暂时没相关店铺，敬请期待'
+            response['data'] = shop_info
     except KeyError, e:
         response['result'] = 'not authorization'
     except ArgumentException, e:
@@ -206,8 +208,6 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
     except Exception, e:
         response['result'] = str(e)
     finally:
-        if not response.has_key('data'):
-            response['data'] = ''
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 @api_view()
@@ -392,7 +392,7 @@ def srvlimit(request,shoper_type):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = ''
+            response['data'] = srv_limit
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 class ClassifyViewSet(viewsets.ModelViewSet):
@@ -435,6 +435,7 @@ def getshopproduct(request,shop_id,sort_type,page_num,page_size):
     response =  OrderedDict()
     column_name = ['composite','-sales','-evaluate']
     try:
+        product_info = []
         user_id = ""
         key = ""
         user_id = request.META['HTTP_USERID']
@@ -480,7 +481,7 @@ def getshopproduct(request,shop_id,sort_type,page_num,page_size):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = ''
+            response['data'] = product_info
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 '''
@@ -508,7 +509,7 @@ def getproductbyid(request,product_id):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = ''
+            response['data'] = product_info
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 '''
@@ -536,7 +537,7 @@ def getmyshop(request,user_id):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = ''
+            response['data'] = shop_info
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 
@@ -549,6 +550,7 @@ def getmyshop(request,user_id):
 def getproductbyshop(request,shop_id,page_num,page_size):
     response =  OrderedDict()
     try:
+        product_info = []
         user_id = ""
         key = ""
         user_id = request.META['HTTP_USERID']
@@ -587,7 +589,7 @@ def getproductbyshop(request,shop_id,page_num,page_size):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = ''
+            response['data'] = product_info
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 '''
@@ -597,11 +599,18 @@ def getproductbyshop(request,shop_id,page_num,page_size):
 def updatemyshopinfo(request):
     response =  OrderedDict()
     try:
+        user_id = ""
+        key = ""
+        user_id = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(user_id,key)
         myshop_info = ShopInfo.objects.get(shop_id=request.data["shop_id"])
         serializer = MyShopSerializer(myshop_info,data=request.data)
         if serializer.is_valid():
             serializer.save()
             response['result'] = 'success'
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except ShopInfo.DoesNotExist:
         response['result'] = '店铺信息不存在'
     except Exception,e:
@@ -629,7 +638,7 @@ def getcityinfo(request):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = ''
+            response['data'] = city_infos
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 '''
@@ -650,7 +659,7 @@ def getdistrictinfo(request,city_id):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = ''
+            response['data'] = district_infos
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 '''
@@ -660,24 +669,32 @@ def getdistrictinfo(request,city_id):
 @api_view()
 def getmyaddrinfo(request,user_id):
     response =  OrderedDict()
-    token = request.META['HTTP_TOKEN']
     try:
+        uid = ""
+        key = ""
+        addr_infos= []
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if uid<>user_id:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
         m1 = re.match(r'(^\d{1,11}$)',user_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:user_id") 
         addr_infos = AddrInfo.objects.filter(user_id=user_id,status=1)
-        if addr_infos:
+        if len(addr_infos):
             serializer = MyAddrSerializer(addr_infos,many = True)
             response['result'] = 'success'
             response['data'] = serializer.data
         else:
             response['result'] = '未添加相应地址信息'
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except Exception, e:
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = ''
-        response['token'] = token
+            response['data'] = addr_infos
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 '''
@@ -688,12 +705,22 @@ def getmyaddrinfo(request,user_id):
 def addmyaddress(request):
     response =  OrderedDict()
     try:
+        uid = ""
+        key = ""
+        addr_infos= []
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if int(uid)<>request.data["user_id"]:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
         serializer = AddrSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             response['result'] = 'success'
         else:
             response['result'] = str(serializer.errors)
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except Exception,e:
         response['result'] = str(e)
 
