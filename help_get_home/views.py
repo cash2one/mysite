@@ -752,7 +752,7 @@ def updatemyaddress(request):
     except KeyError, e:
         response['result'] = 'not authorization'
     except AddrInfo.DoesNotExist:
-        response['result'] = '地址修改成功'
+        response['result'] = '地址不存在'
     except Exception,e:
         response['result'] = str(e)
 
@@ -787,10 +787,19 @@ def checkisshoper(request,user_id):
 def updateshopdesc(request):
     response =  OrderedDict()
     try:
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(uid,key)
         shop_info = ShopInfo.objects.get(shop_id=request.data['shop_id'])
+        if int(uid)<>shop_info.user_id:
+            raise Exception,"Permission Denied"
         shop_info.shop_desc = request.data['shop_desc']
         shop_info.save()
         response['result'] = 'success'
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except ShopInfo.DoesNotExist:
         response['result'] = '店铺不存在'
     except Exception,e:
