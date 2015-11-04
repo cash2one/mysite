@@ -735,6 +735,13 @@ def addmyaddress(request):
 def updatemyaddress(request):
     response =  OrderedDict()
     try:
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if int(uid)<>request.data["user_id"]:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
         addr_info = AddrInfo.objects.get(id=request.data["id"])
         serializer =AddrSerializer(addr_info,data=request.data)
         if serializer.is_valid():
@@ -742,6 +749,8 @@ def updatemyaddress(request):
             response['result'] = 'success'
         else:
             response['result'] = str(serializer.errors)
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except AddrInfo.DoesNotExist:
         response['result'] = '地址修改成功'
     except Exception,e:
