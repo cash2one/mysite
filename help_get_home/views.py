@@ -1141,10 +1141,23 @@ def getusercomment(request,product_id):
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 @api_view()
-def display_meta(request):
-    values = request.META.items()
-    values.sort()    
-    html = []    
-    for k, v in values:        
-        html.append('<tr><td>%s</td><td>%s</td></tr>' % (k, v))    
-    return HttpResponse('<table>%s</table>' % '\n'.join(html))
+def searchproduct(request,product_name):
+    response =  OrderedDict()
+    try:
+
+        product_info = ProductInfo.objects.filter(product_name__contains = product_name,verify_status=1,status=1)
+        if product_info:
+            serializer = ProductSerializer(product_info,many = True)
+            response['result'] = 'success'
+            response['data'] = serializer.data
+        else:
+            response['result'] = '没有对应的商品信息'
+    except ArgumentException, e:
+        response['result']  = e.errors
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        if not response.has_key('data'):
+            response['data'] = []
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
