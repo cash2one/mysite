@@ -977,11 +977,18 @@ def updateorderstatus(request):
 def updateshoppingcart(request):
     response =  OrderedDict()
     try:
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(uid,key)
         status = str(request.data['status'])
         m= re.match(r'([0-1])',status)
         if m == None  :
             raise ArgumentException("invalid argument:status only can be 0-1") 
         order_info = SaleOrder.objects.get(order_id=request.data['order_id'])
+        if int(uid)<>order_info.user_id:
+            raise Exception,"Permission Denied"
         order_info.status = request.data['status']
         order_info.save()
         response['result'] = 'success'
@@ -991,6 +998,8 @@ def updateshoppingcart(request):
         if status=='1':
             product_info.product_num = product_info.product_num - 1
         product_info.save()
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except ArgumentException, e:           
         response['result'] = e.errors
     except SaleOrder.DoesNotExist:
