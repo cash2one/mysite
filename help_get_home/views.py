@@ -1079,6 +1079,13 @@ def getshoperorder(request,user_id,order_status):
 def addusercomment(request):
     response =  OrderedDict()
     try:
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(uid,key)
+        if int(uid)<>request.data["user_id"]:
+            raise Exception,"Permission Denied"
         serializer = UserCommentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
