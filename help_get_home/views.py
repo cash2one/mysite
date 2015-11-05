@@ -1126,6 +1126,7 @@ def getusercomment(request,product_id):
                 comment_dict['user_nick'] = user_info.nick
                 comment_dict['match_desc'] = temp.match_desc
                 comment_dict['comment'] = temp.comment
+                comment_dict['last_modify'] = temp.last_modify.strftime("%Y-%M-%d")
                 comment_list.append(comment_dict)
             response['result'] = 'success'
             response['data'] = comment_list
