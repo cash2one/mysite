@@ -131,25 +131,36 @@ def uploadimage(request):
         return render_to_response('uploadimage.html')
 @api_view()
 def getsrvtype(request,srv_type):
-    parent_info = ClassifyInfo.objects.get(id = srv_type)
-    classify_info = ClassifyInfo.objects.filter(parent_id=srv_type)
     response=OrderedDict()
-    data=[]
-    if classify_info :
-        for temp in classify_info:
-            classify_dict = OrderedDict()
-            classify_dict["type"] = int(srv_type)
-            classify_dict["label"] = parent_info.name
-            classify_dict["sub_type"] = temp.id
-            classify_dict["sub_label"] = temp.name
-            data.append(classify_dict)
-        response['result'] = 'success' 
-        response['data'] = data
-    else:
-        response['result'] = '没有对应的分类信息'
+    try:
+        m1 = re.match(r'(^\d{1,2}$)',srv_type)
+        if m1 == None  :
+            raise Exception,"invalid argument:srv_sub_type" 
+        parent_info = ClassifyInfo.objects.get(id = srv_type)
+        classify_info = ClassifyInfo.objects.filter(parent_id=srv_type)
+        data=[]
+        if classify_info :
+            for temp in classify_info:
+                classify_dict = OrderedDict()
+                classify_dict["type"] = int(srv_type)
+                classify_dict["label"] = parent_info.name
+                classify_dict["sub_type"] = temp.id
+                classify_dict["sub_label"] = temp.name
+                data.append(classify_dict)
+            response['result'] = 'success' 
+            response['data'] = data
+        else:
+            response['result'] = '没有对应的分类信息'
+            response['data'] = []
+    except ClassifyInfo.DoesNotExist:
+        response['result'] = '没有对应分类信息'
         response['data'] = []
-    json= JSONRenderer().render(response)
-    return HttpResponse(json)
+    except Exception, e:
+        response['result'] = 'failed'
+        response['data'] = str(e)
+    finally:
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
 @api_view()
 def getareainfo(request):
     response =  OrderedDict()
