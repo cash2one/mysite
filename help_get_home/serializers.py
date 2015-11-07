@@ -12,7 +12,7 @@ sys.setdefaultencoding('utf-8')
 class ClassifySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ClassifyInfo
-        fields = ('type','label','sub_type','sub_label','status')
+        fields = ('id','name','parent','level')
 class SrvLimitSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = SrvLimit 

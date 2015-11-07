@@ -131,15 +131,23 @@ def uploadimage(request):
         return render_to_response('uploadimage.html')
 @api_view()
 def getsrvtype(request,srv_type):
-    classify_info = ClassifyInfo.objects.filter(type=srv_type)
+    parent_info = ClassifyInfo.objects.get(id = srv_type)
+    classify_info = ClassifyInfo.objects.filter(parent_id=srv_type)
     response=OrderedDict()
+    data=[]
     if classify_info :
-        serializer = ClassifySerializer(classify_info,many = True)
+        for temp in classify_info:
+            classify_dict = OrderedDict()
+            classify_dict["type"] = int(srv_type)
+            classify_dict["label"] = parent_info.name
+            classify_dict["sub_type"] = temp.id
+            classify_dict["sub_label"] = temp.name
+            data.append(classify_dict)
         response['result'] = 'success' 
-        response['data'] = serializer.data
+        response['data'] = data
     else:
         response['result'] = '没有对应的分类信息'
-        response['data'] = classify_info
+        response['data'] = []
     json= JSONRenderer().render(response)
     return HttpResponse(json)
 @api_view()
@@ -395,19 +403,6 @@ def srvlimit(request,shoper_type):
             response['data'] = srv_limit
         json= JSONRenderer().render(response)
         return HttpResponse(json)
-class ClassifyViewSet(viewsets.ModelViewSet):
-    queryset = ClassifyInfo.objects.filter(type=1)
-    serializer_class =  ClassifySerializer                                                                        
-    @list_route()
-    def getclassify(self,request):
-        return Response({'status': 'password set'})
-    @detail_route(methods=['post'])
-    def post(self, request, format=None):
-        serializer = ClassifySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class UserViewSet(viewsets.ModelViewSet):
     queryset = UserInfo.objects.all()
     serializer_class = UserSerializer

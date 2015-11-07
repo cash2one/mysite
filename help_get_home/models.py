@@ -41,6 +41,104 @@ class AreaInfo(models.Model):
         db_table = 'area_info'
 
 
+class AtivityAd(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    image_id = models.IntegerField(blank=True, null=True)
+    shop_id = models.IntegerField(blank=True, null=True)
+    status = models.IntegerField(blank=True, null=True)
+    last_modify = models.DateTimeField(blank=True, null=True)
+    type = models.IntegerField(blank=True, null=True)
+    title = models.CharField(max_length=64, blank=True)
+    sub_title = models.CharField(max_length=64, blank=True)
+    image_url = models.CharField(max_length=128, blank=True)
+    detail_url = models.CharField(max_length=45, blank=True)
+    content = models.CharField(max_length=256, blank=True)
+    start_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'ativity_ad'
+
+
+class AuthGroup(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    name = models.CharField(unique=True, max_length=80)
+
+    class Meta:
+        managed = False
+        db_table = 'auth_group'
+
+
+class AuthGroupPermissions(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    group = models.ForeignKey(AuthGroup)
+    permission = models.ForeignKey('AuthPermission')
+
+    class Meta:
+        managed = False
+        db_table = 'auth_group_permissions'
+
+
+class AuthPermission(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    name = models.CharField(max_length=50)
+    content_type = models.ForeignKey('DjangoContentType')
+    codename = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'auth_permission'
+
+
+class AuthUser(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    password = models.CharField(max_length=128)
+    last_login = models.DateTimeField()
+    is_superuser = models.IntegerField()
+    username = models.CharField(unique=True, max_length=30)
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
+    email = models.CharField(max_length=75)
+    is_staff = models.IntegerField()
+    is_active = models.IntegerField()
+    date_joined = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'auth_user'
+
+
+class AuthUserGroups(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    user = models.ForeignKey(AuthUser)
+    group = models.ForeignKey(AuthGroup)
+
+    class Meta:
+        managed = False
+        db_table = 'auth_user_groups'
+
+
+class AuthUserUserPermissions(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    user = models.ForeignKey(AuthUser)
+    permission = models.ForeignKey(AuthPermission)
+
+    class Meta:
+        managed = False
+        db_table = 'auth_user_user_permissions'
+
+
+class AuthtokenToken(models.Model):
+    key = models.CharField(primary_key=True, max_length=40)
+    created = models.DateTimeField()
+    user = models.ForeignKey(AuthUser, unique=True)
+
+    class Meta:
+        managed = False
+        db_table = 'authtoken_token'
+
+
 class CityInfo(models.Model):
     city_id = models.BigIntegerField(primary_key=True)
     city = models.CharField(max_length=500, blank=True)
@@ -53,10 +151,10 @@ class CityInfo(models.Model):
 
 
 class ClassifyInfo(models.Model):
-    sub_type = models.IntegerField(primary_key=True)
-    type = models.IntegerField(blank=True, null=True)
-    label = models.CharField(max_length=64, blank=True)
-    sub_label = models.CharField(max_length=64, blank=True)
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    name = models.CharField(max_length=64, blank=True)
+    parent_id = models.IntegerField(blank=True, null=True)
+    level = models.IntegerField(blank=True, null=True)
     status = models.IntegerField(blank=True, null=True)
     last_modify = models.DateTimeField(blank=True, null=True)
 
@@ -77,6 +175,32 @@ class DistrictInfo(models.Model):
         db_table = 'district_info'
 
 
+class DjangoAdminLog(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    action_time = models.DateTimeField()
+    object_id = models.TextField(blank=True)
+    object_repr = models.CharField(max_length=200)
+    action_flag = models.IntegerField()
+    change_message = models.TextField()
+    content_type = models.ForeignKey('DjangoContentType', blank=True, null=True)
+    user = models.ForeignKey(AuthUser)
+
+    class Meta:
+        managed = False
+        db_table = 'django_admin_log'
+
+
+class DjangoContentType(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    name = models.CharField(max_length=100)
+    app_label = models.CharField(max_length=100)
+    model = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'django_content_type'
+
+
 class DjangoMigrations(models.Model):
     id = models.IntegerField(primary_key=True)  # AutoField?
     app = models.CharField(max_length=255)
@@ -88,18 +212,30 @@ class DjangoMigrations(models.Model):
         db_table = 'django_migrations'
 
 
+class DjangoSession(models.Model):
+    session_key = models.CharField(primary_key=True, max_length=40)
+    session_data = models.TextField()
+    expire_date = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'django_session'
+
+
 class ImageInfo(models.Model):
     id = models.IntegerField(primary_key=True)  # AutoField?
     real_name = models.CharField(max_length=45, blank=True)
     random_name = models.CharField(max_length=45, blank=True)
     label = models.CharField(max_length=500, blank=True)
-    url = models.CharField(max_length=500, blank=True)
-    thumbnail_url = models.CharField(max_length=45, blank=True)
+    url = models.CharField(max_length=256, blank=True)
+    thumbnail_url = models.CharField(max_length=256, blank=True)
     status = models.IntegerField(blank=True, null=True)
     last_modify = models.DateTimeField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
     subtype = models.IntegerField(blank=True, null=True)
     pos = models.IntegerField()
+    ref_id = models.IntegerField(blank=True, null=True)
+    remark = models.CharField(max_length=45, blank=True)
 
     class Meta:
         managed = False
@@ -108,26 +244,63 @@ class ImageInfo(models.Model):
 
 class ProductInfo(models.Model):
     product_id = models.IntegerField(primary_key=True)
+    product_name = models.CharField(max_length=45, blank=True)
     shop_id = models.IntegerField()
     url = models.CharField(max_length=128, blank=True)
-    product_name = models.CharField(max_length=255, blank=True)
-    srv_sub_type = models.IntegerField(blank=True, null=True)
+    thumbnail = models.CharField(max_length=128, blank=True)
+    label = models.IntegerField()
     product_type = models.IntegerField()
+    money = models.IntegerField()
     begin_time = models.DateTimeField(blank=True, null=True)
     end_time = models.DateTimeField(blank=True, null=True)
     price = models.IntegerField()
-    product_num = models.IntegerField()
-    product_desc = models.CharField(max_length=255, blank=True)
+    product_num = models.IntegerField(blank=True, null=True)
+    product_desc = models.CharField(max_length=2000, blank=True)
     sales = models.IntegerField()
-    evaluate = models.IntegerField()
+    evaluate = models.IntegerField(blank=True, null=True)
     verify_status = models.IntegerField(blank=True, null=True)
     status = models.IntegerField(blank=True, null=True)
     create_time = models.DateTimeField(blank=True, null=True)
     last_modify = models.DateTimeField(blank=True, null=True)
+    srv_sub_type = models.IntegerField()
 
     class Meta:
         managed = False
         db_table = 'product_info'
+
+
+class ResourceInfo(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    name = models.CharField(max_length=45)
+    type = models.CharField(max_length=45, blank=True)
+    url = models.CharField(max_length=64, blank=True)
+    parent_id = models.IntegerField(blank=True, null=True)
+    parent_ids = models.CharField(max_length=45, blank=True)
+    code = models.CharField(max_length=32, blank=True)
+    style = models.CharField(max_length=32, blank=True)
+    permissions = models.CharField(max_length=128, blank=True)
+    priority = models.IntegerField(blank=True, null=True)
+    remark = models.CharField(max_length=64, blank=True)
+    created_by = models.IntegerField()
+    create_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'resource_info'
+
+
+class RoleInfo(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    name = models.CharField(max_length=32)
+    resource_ids = models.CharField(max_length=500, blank=True)
+    type = models.IntegerField(blank=True, null=True)
+    status = models.IntegerField(blank=True, null=True)
+    created_by = models.IntegerField()
+    create_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'role_info'
 
 
 class SaleOrder(models.Model):
@@ -155,8 +328,7 @@ class SaleOrder(models.Model):
 
 class SevicePeople(models.Model):
     id = models.IntegerField(primary_key=True)  # AutoField?
-    product_id = models.IntegerField()
-    shop_id = models.IntegerField()
+    user_id = models.IntegerField(blank=True, null=True)
     phone = models.BigIntegerField()
     head_url = models.CharField(max_length=500, blank=True)
     hometown = models.CharField(max_length=128, blank=True)
@@ -183,6 +355,7 @@ class ShopInfo(models.Model):
     shoper = models.CharField(max_length=128, blank=True)
     shoper_phone = models.BigIntegerField(blank=True, null=True)
     telephone = models.BigIntegerField()
+    srv_type = models.IntegerField(blank=True, null=True)
     srv_sub_type = models.CharField(max_length=128, blank=True)
     srv_community = models.CharField(max_length=128)
     shop_address = models.CharField(max_length=128, blank=True)
@@ -202,11 +375,26 @@ class ShopInfo(models.Model):
     recommend = models.IntegerField(blank=True, null=True)
     entity = models.IntegerField(blank=True, null=True)
     level = models.IntegerField(blank=True, null=True)
-    shop_desc = models.CharField(max_length=256, blank=True)
+    shop_desc = models.CharField(max_length=2000, blank=True)
 
     class Meta:
         managed = False
         db_table = 'shop_info'
+
+
+class ShopQuote(models.Model):
+    id = models.BigIntegerField(primary_key=True)
+    order_id = models.CharField(max_length=45, blank=True)
+    product_id = models.CharField(max_length=32, blank=True)
+    price = models.CharField(max_length=45, blank=True)
+    mobile = models.CharField(max_length=45, blank=True)
+    created = models.DateTimeField(blank=True, null=True)
+    status = models.CharField(max_length=2, blank=True)
+    remark = models.CharField(max_length=128, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'shop_quote'
 
 
 class SrvLimit(models.Model):
@@ -243,16 +431,16 @@ class UserComment(models.Model):
 
 class UserCoupon(models.Model):
     id = models.IntegerField(primary_key=True)  # AutoField?
-    user_id = models.IntegerField()
+    user_id = models.IntegerField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
     sub_type = models.IntegerField(blank=True, null=True)
-    name = models.CharField(max_length=50)
-    desc = models.CharField(max_length=256, blank=True)
-    coupon_value = models.IntegerField()
-    status = models.IntegerField()
-    begin_time = models.IntegerField()
-    end_time = models.IntegerField()
-    order_id = models.CharField(max_length=64, blank=True)
+    name = models.CharField(max_length=50, blank=True)
+    desc_field = models.CharField(db_column='desc_', max_length=256, blank=True)  # Field renamed because it ended with '_'.
+    coupon_value = models.IntegerField(blank=True, null=True)
+    status = models.IntegerField(blank=True, null=True)
+    begin_time = models.IntegerField(blank=True, null=True)
+    end_time = models.IntegerField(blank=True, null=True)
+    order_id = models.CharField(max_length=128, blank=True)
     remark = models.CharField(max_length=256, blank=True)
     last_modify = models.DateTimeField(blank=True, null=True)
     operator = models.CharField(max_length=256, blank=True)
@@ -282,12 +470,22 @@ class UserInfo(models.Model):
     pwd = models.CharField(max_length=500, blank=True)
     nick = models.CharField(max_length=500, blank=True)
     sex = models.IntegerField(blank=True, null=True)
-    address_id = models.IntegerField(blank=True, null=True)
+    address_id = models.IntegerField()
     type = models.IntegerField(blank=True, null=True)
     status = models.IntegerField(blank=True, null=True)
     verify_status = models.IntegerField(blank=True, null=True)
-    create_time = models.DateTimeField(auto_now_add = True)
+    create_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'user_info'
+
+
+class UserRole(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    user_id = models.IntegerField()
+    role_id = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'user_role'

@@ -2,7 +2,6 @@ from django.conf.urls import include,patterns, url
 from rest_framework import routers
 from help_get_home import views
 router = routers.DefaultRouter()
-router.register(r'classify', views.ClassifyViewSet,"ClassifyViewSet")
 router.register(r'userinfo', views.UserViewSet,"UserViewSet")
 router.register(r'userinfo/(\d{0,9})/', views.UserViewSet.as_view({'get':'getuserinfo'}),"UserViewSet")
 urlpatterns = patterns('',
@@ -45,7 +44,6 @@ urlpatterns = patterns('',
             url(r'^login/(.+)/(.+)/$',views.login,name='login'),
             url(r'^addusercomment/$',views.addusercomment,name='addusercomment'),
             url(r'^getusercomment/(.+)/$',views.getusercomment,name='getusercomment'),
-            url(r'^display_meta/$',views.display_meta,name='display_meta'),
             url(r'^createtoken/(.+)/$',views.createtoken,name='createtoken'),
             url(r'^', include(router.urls)),
 
