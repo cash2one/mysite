@@ -229,12 +229,14 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
     finally:
         json= JSONRenderer().render(response)
         return HttpResponse(json)
-@api_view()
-def login(request,phone,password):
+@api_view(['POST'])
+def login(request):
     response = OrderedDict()
     try:
+        phone = str(request.data['phone'])
         m = re.match(r'(^\d{11}$)',phone)
         if m:
+            password = request.data['password']
             user_info =  UserInfo.objects.filter(phone=phone)
             if user_info :
                 if password == user_info[0].pwd:
@@ -247,10 +249,14 @@ def login(request,phone,password):
                     response['key'] = key
                 else: 
                     response['result'] = '用户名或密码错误'
+                    response['user'] = phone
+                    response['pwd'] = password
             else:
-                response['result'] = '用户名或密码错误'
+                response['result'] = '用户名或密码错误:usr_info is null'
 
         else:
+            response['user'] = phone
+            response['pwd'] = password
             response['result'] = '手机号不正确'
     except Exception, e:
         response['result'] = str(e)
@@ -270,7 +276,7 @@ def register(request):
             serializer.save()
             try:
                 user_info = UserInfo.objects.get(phone=request.data["phone"])
-                auth_user = User(id=user_info.user_id,username=request.data['phone'],   \
+                auth_user = User(id=user_info.user_id,username=request.data["phone"],   \
                                  password=request.data['pwd'], \
                                  is_staff=1,is_active=1,is_superuser=0)
                 auth_user.save()
