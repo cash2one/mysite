@@ -33,6 +33,7 @@ class AddrInfo(models.Model):
 class AreaInfo(models.Model):
     area_id = models.BigIntegerField(primary_key=True)
     area = models.CharField(max_length=500, blank=True)
+    parent_id = models.BigIntegerField(blank=True, null=True)
     status = models.IntegerField()
     last_modify = models.DateTimeField(blank=True, null=True)
 
@@ -59,6 +60,45 @@ class AtivityAd(models.Model):
     class Meta:
         managed = False
         db_table = 'ativity_ad'
+
+
+class AtivityDetail(models.Model):
+    detail_image_id = models.IntegerField()
+    image_id = models.IntegerField()
+    detail_image_url = models.CharField(max_length=128, blank=True)
+    thumbnail = models.CharField(max_length=128, blank=True)
+    status = models.IntegerField(blank=True, null=True)
+    last_modify = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'ativity_detail'
+
+
+class AtivityInfo(models.Model):
+    image_id = models.IntegerField(primary_key=True)
+    image_url = models.CharField(max_length=128, blank=True)
+    thumbnail = models.CharField(max_length=128, blank=True)
+    type = models.IntegerField(blank=True, null=True)
+    start_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateTimeField(blank=True, null=True)
+    status = models.IntegerField(blank=True, null=True)
+    last_modify = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'ativity_info'
+
+
+class AtivityShop(models.Model):
+    image_id = models.IntegerField(primary_key=True)
+    shop_id = models.IntegerField()
+    status = models.IntegerField(blank=True, null=True)
+    last_modify = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'ativity_shop'
 
 
 class AuthGroup(models.Model):
@@ -251,8 +291,8 @@ class ProductInfo(models.Model):
     label = models.IntegerField()
     product_type = models.IntegerField()
     money = models.IntegerField()
-    begin_time = models.DateTimeField(blank=True, null=True)
-    end_time = models.DateTimeField(blank=True, null=True)
+    begin_time = models.CharField(max_length=32, blank=True)
+    end_time = models.CharField(max_length=32, blank=True)
     price = models.IntegerField()
     product_num = models.IntegerField(blank=True, null=True)
     product_desc = models.CharField(max_length=2000, blank=True)
@@ -376,6 +416,7 @@ class ShopInfo(models.Model):
     entity = models.IntegerField(blank=True, null=True)
     level = models.IntegerField(blank=True, null=True)
     shop_desc = models.CharField(max_length=2000, blank=True)
+    shop_desc_url = models.CharField(max_length=512, blank=True)
 
     class Meta:
         managed = False
