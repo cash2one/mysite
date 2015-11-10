@@ -12,6 +12,35 @@ from __future__ import unicode_literals
 from django.db import models
 
 
+class ActivityInfo(models.Model):
+    activity_id = models.IntegerField(primary_key=True)
+    position = models.IntegerField(blank=True, null=True)
+    url = models.CharField(max_length=128, blank=True)
+    thumbnail = models.CharField(max_length=128, blank=True)
+    detail_url = models.CharField(max_length=128, blank=True)
+    detail_url_desc = models.CharField(max_length=128, blank=True)
+    type = models.IntegerField(blank=True, null=True)
+    start_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateTimeField(blank=True, null=True)
+    status = models.IntegerField(blank=True, null=True)
+    last_modify = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'activity_info'
+
+
+class ActivityShop(models.Model):
+    activity_id = models.IntegerField(primary_key=True)
+    shop_id = models.IntegerField()
+    status = models.IntegerField(blank=True, null=True)
+    last_modify = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'activity_shop'
+
+
 class AddrInfo(models.Model):
     id = models.BigIntegerField(primary_key=True)
     user_id = models.IntegerField()
@@ -56,49 +85,11 @@ class AtivityAd(models.Model):
     content = models.CharField(max_length=256, blank=True)
     start_time = models.DateTimeField(blank=True, null=True)
     end_time = models.DateTimeField(blank=True, null=True)
+    desc_url = models.CharField(max_length=256, blank=True)
 
     class Meta:
         managed = False
         db_table = 'ativity_ad'
-
-
-class AtivityDetail(models.Model):
-    detail_image_id = models.IntegerField()
-    image_id = models.IntegerField()
-    detail_image_url = models.CharField(max_length=128, blank=True)
-    thumbnail = models.CharField(max_length=128, blank=True)
-    status = models.IntegerField(blank=True, null=True)
-    last_modify = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'ativity_detail'
-
-
-class AtivityInfo(models.Model):
-    image_id = models.IntegerField(primary_key=True)
-    image_url = models.CharField(max_length=128, blank=True)
-    thumbnail = models.CharField(max_length=128, blank=True)
-    type = models.IntegerField(blank=True, null=True)
-    start_time = models.DateTimeField(blank=True, null=True)
-    end_time = models.DateTimeField(blank=True, null=True)
-    status = models.IntegerField(blank=True, null=True)
-    last_modify = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'ativity_info'
-
-
-class AtivityShop(models.Model):
-    image_id = models.IntegerField(primary_key=True)
-    shop_id = models.IntegerField()
-    status = models.IntegerField(blank=True, null=True)
-    last_modify = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'ativity_shop'
 
 
 class AuthGroup(models.Model):
@@ -295,7 +286,7 @@ class ProductInfo(models.Model):
     end_time = models.CharField(max_length=32, blank=True)
     price = models.IntegerField()
     product_num = models.IntegerField(blank=True, null=True)
-    product_desc = models.CharField(max_length=2000, blank=True)
+    product_desc = models.CharField(max_length=4000, blank=True)
     sales = models.IntegerField()
     evaluate = models.IntegerField(blank=True, null=True)
     verify_status = models.IntegerField(blank=True, null=True)
@@ -303,6 +294,7 @@ class ProductInfo(models.Model):
     create_time = models.DateTimeField(blank=True, null=True)
     last_modify = models.DateTimeField(blank=True, null=True)
     srv_sub_type = models.IntegerField()
+    product_desc_url = models.CharField(max_length=256, blank=True)
 
     class Meta:
         managed = False
@@ -397,7 +389,7 @@ class ShopInfo(models.Model):
     telephone = models.BigIntegerField()
     srv_type = models.IntegerField(blank=True, null=True)
     srv_sub_type = models.CharField(max_length=128, blank=True)
-    srv_community = models.CharField(max_length=128)
+    srv_community = models.CharField(max_length=512)
     shop_address = models.CharField(max_length=128, blank=True)
     post_address = models.CharField(max_length=128, blank=True)
     positive_idcard = models.CharField(max_length=128, blank=True)
@@ -415,8 +407,8 @@ class ShopInfo(models.Model):
     recommend = models.IntegerField(blank=True, null=True)
     entity = models.IntegerField(blank=True, null=True)
     level = models.IntegerField(blank=True, null=True)
-    shop_desc = models.CharField(max_length=2000, blank=True)
-    shop_desc_url = models.CharField(max_length=512, blank=True)
+    shop_desc = models.CharField(max_length=4000, blank=True)
+    shop_desc_url = models.CharField(max_length=256, blank=True)
 
     class Meta:
         managed = False

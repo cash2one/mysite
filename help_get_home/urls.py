@@ -45,6 +45,8 @@ urlpatterns = patterns('',
             url(r'^addusercomment/$',views.addusercomment,name='addusercomment'),
             url(r'^getusercomment/(.+)/$',views.getusercomment,name='getusercomment'),
             url(r'^createtoken/(.+)/$',views.createtoken,name='createtoken'),
+            url(r'^getad/(.+)/$',views.getad,name='getad'),
+            url(r'^getdetailad/(.+)/$',views.getdetailad,name='getdetailad'),
             url(r'^', include(router.urls)),
 
             )

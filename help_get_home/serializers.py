@@ -31,7 +31,7 @@ class ShopSerializer(serializers.HyperlinkedModelSerializer):
         model = ShopInfo
         fields = ('shop_id','shop_name','shop_url','type','entity','level', \
                   'shop_address','srv_attitude','srv_speed', \
-                  'srv_contents','order_num','shop_desc'
+                  'srv_contents','order_num','shop_desc_url'
                  )
 
 class MyShopSerializer(serializers.HyperlinkedModelSerializer):
@@ -155,3 +155,8 @@ class AllCommentSerializer(serializers.Serializer):
     comment_id = serializers.IntegerField()
     match_desc = serializers.IntegerField()
     comment = serializers.CharField(max_length=128, allow_blank=False, trim_whitespace=True)
+class AdSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = ActivityInfo
+        fields = ('position','activity_id', \
+                  'url')

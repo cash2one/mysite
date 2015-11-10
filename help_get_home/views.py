@@ -24,7 +24,8 @@ from rest_framework.authtoken.models import Token
 from help_get_home.serializers import  ClassifySerializer,UserSerializer,ShopSerializer, \
         ProductSerializer,UnLicenseShoperSerializer,LicenseShoperSerializer,SrvLimitSerializer, \
         AreaSerializer,MyShopSerializer,CitySerializer,DistrictSerializer,AddrSerializer,MyAddrSerializer,    \
-        OrderSerializer,MyOrderSerializer,UserCommentSerializer,AllCommentSerializer,MyShopSerializer
+        OrderSerializer,MyOrderSerializer,UserCommentSerializer,AllCommentSerializer,MyShopSerializer,    \
+        AdSerializer
 
 
 
@@ -549,7 +550,7 @@ def getmyshop(request,user_id):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = shop_info
+            response['data'] = []
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 
@@ -1172,5 +1173,71 @@ def searchproduct(request,product_name):
     finally:
         if not response.has_key('data'):
             response['data'] = []
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+'''
+******************************获取首页广告信息******************************
+'''
+
+
+@api_view()
+def getad(request,type):
+    response =  OrderedDict()
+    try:
+        m1 = re.match(r'(^\d{1,11}$)',type)
+        if m1 == None  :
+            raise ArgumentException("invalid argument:type") 
+        ad_info = ActivityInfo.objects.filter(type=type,status=1)
+        if ad_info:
+            serializer = AdSerializer(ad_info,many = True)
+            response['result'] = 'success'
+            response['data'] = serializer.data
+        else:
+            response['result'] = '该类型没有对应广告信息'
+    except ArgumentException, e:
+        response['result']  = e.errors
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        if not response.has_key('data'):
+            response['data'] = []
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+'''
+******************************获取首页广告信息详情******************************
+'''
+
+
+@api_view()
+def getdetailad(request,activity_id):
+    response =  OrderedDict()
+    try:
+        m1 = re.match(r'(^\d{1,11}$)',activity_id)
+        if m1 == None  :
+            raise ArgumentException("invalid argument:activity_id") 
+        ad_info = ActivityInfo.objects.get(activity_id=activity_id,status=1)
+        shop_ids = ActivityShop.objects.filter(activity_id=activity_id,status=1)
+        shop_list=[]
+        for temp in shop_ids:
+            shop_dict = OrderedDict()
+            shop_info = ShopInfo.objects.get(shop_id=temp.shop_id)
+            shop_dict["shop_id"]=shop_info.shop_id
+            shop_dict["shop_name"] = shop_info.shop_name
+            shop_dict["shop_url"] = shop_info.shop_url
+            shop_list.append(shop_dict)
+        response['result'] = 'success'
+        response['detail_url'] = ad_info.detail_url
+        response['shop_info'] = shop_list
+    except ActivityInfo.DoesNotExist:
+        response['result']='无效的活动id'
+    except ArgumentException, e:
+        response['result']  = e.errors
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        if not response.has_key('detail_url'):
+            response['detail_url'] = ""
+        if not response.has_key('shop_info'):
+            response['shop_info'] = []
         json= JSONRenderer().render(response)
         return HttpResponse(json)
