@@ -1315,3 +1315,31 @@ def getdetailad(request,activity_id):
             response['shop_info'] = []
         json= JSONRenderer().render(response)
         return HttpResponse(json)
+"""
+*=======================================================================
+*查询订单
+*=======================================================================
+"""
+@api_view()
+def orderquery(request,out_trade_no):
+    response =  OrderedDict()
+    try:
+        order_query = OrderQuery_pub()
+        order_query.setParameter("out_trade_no",out_trade_no)
+        query_result = order_query.getResult()
+        response["result"] = "success"
+        response["data"] = query_result
+        if query_result["return_code"] == "SUCCESS":  
+            if query_result["result_code"] == "SUCCESS":
+                if query_result["trade_state "] == "SUCCESS":
+                    order_info = SaleOrder.objects.get(order_id=out_trade_no,status=1)
+                    if order_info.status==0 :
+                        order_info.status=1
+                        order_info.save()
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        if not response.has_key('data'):
+            response['data'] = []
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
