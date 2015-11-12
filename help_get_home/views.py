@@ -1387,3 +1387,34 @@ def getuserinfo(request,user_id):
             response['data'] = []
         json= JSONRenderer().render(response)
         return HttpResponse(json)
+"""
+*=======================================================================
+*上传用户头像
+*=======================================================================
+"""
+@api_view(['POST'])
+def uploadheadimg(request):
+    response =  OrderedDict()
+    try:
+        uid = ""
+        key = ""
+        addr_infos= []
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if int(uid)<>request.data["user_id"]:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
+        user_info = UserInfo.objects.get(user_id=uid,status=1)
+        user_info.head_url = request.data["head_url"]
+        user_info.save()
+        response['result'] = 'success'
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except UserInfo.DoesNotExist:
+        response["result"] = "fail"
+    except Exception,e:
+        response['result'] = str(e)
+
+    finally:
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
