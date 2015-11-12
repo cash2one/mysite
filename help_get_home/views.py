@@ -888,6 +888,8 @@ def addorder(request):
         if int(uid)<>request.data["user_id"]:
             raise Exception,"Permission Denied"
         order_info = request.data
+        order_info["begin_time"] = order_info["begin_time"] + " 00:00:00" 
+        order_info["end_time"] =  order_info["end_time"] + " 00:00:00"
         product_info = ProductInfo.objects.get(product_id = order_info["product_id"])
         order_info['order_id'] = Common_util_pub().createOrderId()
         prepayid=unifiedorder(order_info['order_id'],product_info.product_name,str(order_info["money"]))
