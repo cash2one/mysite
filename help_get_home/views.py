@@ -31,6 +31,7 @@ from help_get_home.serializers import  ClassifySerializer,UserSerializer,ShopSer
 
 from rest_framework.renderers import JSONRenderer
 from help_get_home.models import *
+from help_get_home.wxzhifu import *
 import datetime
 import os
 import json
@@ -850,6 +851,27 @@ def updateshopicon(request):
     finally:
         json= JSONRenderer().render(response)
         return HttpResponse(json)
+"""
+*=======================================================================
+*统一下单
+*=======================================================================
+"""
+def unifiedorder(out_trade_no,body,total_fee):
+    c = HttpClient()
+    c2 = HttpClient()
+    assert id(c) == id(c2)
+    unifiedorder = UnifiedOrder_pub()
+    unifiedorder.setParameter("out_trade_no",out_trade_no)
+    unifiedorder.setParameter("body",body)
+    unifiedorder.setParameter("total_fee",total_fee)
+    unifiedorder.setParameter("notify_url","http://wxpay.weixin.qq.com/pub_v2/pay/notify.v2.php")
+    unifiedorder.setParameter("trade_type","APP")
+    result = unifiedorder.getPrepayId()
+    return result
+    print "*************统一下单result******************"
+    print "====================================="
+    print "%s" % result
+    print "====================================="
 '''
 ************************往购物车增加商品*********************************
 '''
@@ -865,15 +887,19 @@ def addorder(request):
         checktoken(uid,key)
         if int(uid)<>request.data["user_id"]:
             raise Exception,"Permission Denied"
-        serializer = OrderSerializer(data=request.data)
+        order_info = request.data
+        product_info = ProductInfo.objects.get(product_id = order_info["product_id"])
+        order_info['order_id'] = Common_util_pub().createOrderId()
+        prepayid=unifiedorder(order_info['order_id'],product_info.product_name,str(order_info["money"]))
+        order_info["prepayid"] = prepayid
+        serializer = OrderSerializer(data=order_info)
         if serializer.is_valid():
             serializer.save()
-            product_info = ProductInfo.objects.get(product_id = request.data['product_id'])
             product_info.product_num = product_info.product_num - 1
             product_info.save()
             response['result'] = 'success'
         else:
-            response['result'] = 'order_id 不正确'
+            response['result'] = serializer.errors
     except KeyError, e:
         response['result'] = 'not authorization'
     except ArgumentException, e:           
@@ -884,6 +910,54 @@ def addorder(request):
     finally:
         json= JSONRenderer().render(response)
         return HttpResponse(json)
+"""
+*=======================================================================
+*统一下单
+*=======================================================================
+"""
+@api_view()
+def getpayreq(request,order_id):
+    response = OrderedDict()
+    try:
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(uid,key)
+        data = OrderedDict()
+        wxpay_conf = WxPayConf_pub()
+        common_util = Common_util_pub()
+        data["appid"] = wxpay_conf.APPID
+        data["partnerid"] = wxpay_conf.MCHID
+        data["package"] = "WXPay"
+        data["noncestr"] = common_util.createNoncestr()
+        data["timestamp"] = str(int(time.time())) 
+        order_info = SaleOrder.objects.get(order_id=order_id)
+        prepayid = order_info.prepayid
+        if prepayid is None :
+            product_info = ProductInfo.objects.get(product_id = order_info.product_id)
+            prepayid=unifiedorder(order_info.order_id,product_info.product_name,str(order_info.money))
+            order_info.prepayid=prepayid
+            order_info.save()
+        data["prepayid"] = prepayid
+        sign = common_util.getSign(data)
+        data["sign"] = sign
+        response["result"] = "success"
+        response["data"] = data
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except SaleOrder.DoesNotExist:           
+        response['result'] = "fail"
+    except Exception,e:
+        response['result'] = str(e)
+    finally:
+        if not response.has_key('data'):
+            response['data'] = []
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+
+
+
 '''
 **************************我的订单管理*******************************
 '''

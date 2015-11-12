@@ -119,6 +119,7 @@ class MyShopSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('shop_id','shop_name', \
                   'shop_address','telephone','srv_community')
 class OrderSerializer(serializers.HyperlinkedModelSerializer):
+    prepayid = serializers.CharField(required=False,max_length=128, trim_whitespace=True)
     order_status = serializers.IntegerField(required=False,default=0)
     pay_type = serializers.IntegerField(max_value=2, min_value=0,required=False,default=0)
     is_coupon = serializers.IntegerField(required=False,default=0)
@@ -127,7 +128,7 @@ class OrderSerializer(serializers.HyperlinkedModelSerializer):
     m_time = serializers.DateTimeField(required=False,default = datetime.datetime.now)
     class Meta:
         model = SaleOrder
-        fields = ('order_id','user_id','product_id','shop_id','product_num', \
+        fields = ('order_id','prepayid','user_id','product_id','shop_id','product_num', \
                   'money','begin_time','end_time','address_info','order_status',   \
                   'pay_type','is_coupon','status','c_time','m_time'
                   )

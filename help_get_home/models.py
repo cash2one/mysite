@@ -31,7 +31,7 @@ class ActivityInfo(models.Model):
 
 
 class ActivityShop(models.Model):
-    activity_id = models.IntegerField(primary_key=True)
+    activity_id = models.IntegerField()
     shop_id = models.IntegerField()
     status = models.IntegerField(blank=True, null=True)
     last_modify = models.DateTimeField(blank=True, null=True)
@@ -352,6 +352,7 @@ class SaleOrder(models.Model):
     c_time = models.DateTimeField()
     m_time = models.DateTimeField()
     status = models.IntegerField(blank=True, null=True)
+    prepayid = models.CharField(max_length=256, blank=True)
 
     class Meta:
         managed = False
