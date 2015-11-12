@@ -95,7 +95,7 @@ def index(request):
 def getrollad(request):
     return HttpResponse(u"测试")
 def userfeedback(request,user_id,msg_type,msg):
-    feedback=UserFeedback(user_id=user_id,message=msg,type=msg_type,status=1,last_modify= datetime.now().strftime( '%Y-%m-%d %H:%M:%S' ));
+    feedback=UserFeedback(user_id=user_id,message=msg,type=msg_type,status=1,last_modify= datetime.datetime.now().strftime( '%Y-%m-%d %H:%M:%S' ));
     feedback.save();
     data = '{"result":"意见反馈成功"}' 
     response=json.loads(data)
@@ -1336,6 +1336,50 @@ def orderquery(request,out_trade_no):
                     if order_info.status==0 :
                         order_info.status=1
                         order_info.save()
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        if not response.has_key('data'):
+            response['data'] = []
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+
+"""
+*=======================================================================
+*个人资料
+*=======================================================================
+"""
+@api_view()
+def getuserinfo(request,user_id):
+    response =  OrderedDict()
+    try:
+        uid = ""
+        key = ""
+        addr_infos= []
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if uid<>user_id:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
+        m1 = re.match(r'(^\d{1,11}$)',user_id)
+        if m1 == None  :
+            raise ArgumentException("invalid argument:user_id") 
+        data = OrderedDict()
+        addr_info = AddrInfo.objects.get(user_id=user_id,status=1,addr_type=1)
+        user_info = UserInfo.objects.get(user_id=user_id,status=1)
+        data["head_url"] = user_info.head_url
+        data["name"] = addr_info.name
+        data["address"] = addr_info.address
+        data["phone"] = addr_info.telephone
+        data["points"] = 0
+        response['result'] = 'success'
+        response['data'] = data
+    except AddrInfo.DoesNotExist:
+        response["result"] = "fail"
+    except UserInfo.DoesNotExist:
+        response["result"] = "fail"
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except Exception, e:
         response['result'] = str(e)
     finally:
