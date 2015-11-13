@@ -196,8 +196,10 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
         shop_info = []
         user_id = ""
         key = ""
+        regionCode = ""
         user_id = request.META['HTTP_USERID']
         key = request.META['HTTP_KEY']
+        regioncode = request.META['HTTP_REGIONCODE']
         checktoken(user_id,key)
         m1 = re.match(r'(^\d{1,2}$)',srv_sub_type)
         m2 = re.match(r'(^\d{1,2}$)',sort_type)
@@ -212,9 +214,9 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
         if m4 == None  :
             raise ArgumentException("invalid argument:page_size") 
         if sort_type == '0':
-            shop_info = ShopInfo.objects.filter(srv_sub_type__contains=srv_sub_type,verify_status=1,status=1)
+            shop_info = ShopInfo.objects.filter(srv_sub_type__contains=srv_sub_type,srv_community__contains=regioncode,verify_status=1,status=1)
         else:
-            shop_info = ShopInfo.objects.filter(srv_sub_type__contains=srv_sub_type,verify_status=1,status=1).order_by(column_name[int(sort_type)])
+            shop_info = ShopInfo.objects.filter(srv_sub_type__contains=srv_sub_type,srv_community__contains=regioncode,verify_status=1,status=1).order_by(column_name[int(sort_type)])
         if  int(page_num)==0  and int(page_size)==0:
             page_size = shop_info.count()
             page_num = 1
