@@ -523,3 +523,15 @@ class UserRole(models.Model):
     class Meta:
         managed = False
         db_table = 'user_role'
+
+
+class VerifyCode(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    phone = models.BigIntegerField()
+    code = models.CharField(max_length=128, blank=True)
+    type = models.IntegerField(blank=True, null=True)
+    last_modify = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'verify_code'

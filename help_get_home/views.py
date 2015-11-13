@@ -32,6 +32,7 @@ from help_get_home.serializers import  ClassifySerializer,UserSerializer,ShopSer
 from rest_framework.renderers import JSONRenderer
 from help_get_home.models import *
 from help_get_home.wxzhifu import *
+from help_get_home.sendsms import *
 import datetime
 import os
 import json
@@ -379,15 +380,52 @@ def resetpwd(request):
         response=json.loads(ret)
         return HttpResponse(json.dumps(response, ensure_ascii=False))  
        
-def getverifycode(request,phone,srv_type):
-    data='{"result":"验证码已经发送"}'
-    response=json.loads(data)
-    return HttpResponse(json.dumps(response, ensure_ascii=False))  
+def getverifycode(request,phone,type):
+    response = OrderedDict()
+    try:
+        m = re.match(r'(^\d{11}$)',phone)
+        if m == None:
+            raise ArgumentException("invalid argument:phone") 
+        tpl_id = '7231' #申请的短信模板ID,根据实际情况修改 
+        tpl_value = '#app#=bang&#code#=' #短信模板变量,根据实际情况修改
+        code = Common_util_pub().createverifycode()
+        tpl_value=tpl_value+code
+        verify_code=VerifyCode.objects.get(phone=phone,type=type)
+        verify_code.code=code
+        verify_code.last_modify = datetime.datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )
+        verify_code.save()
+        sendsms(phone, tpl_id, tpl_value) #请求发送短信
+        response["result"] = "验证码已发送"
+    except ArgumentException, e:
+        response['result'] = e.errors
+    except VerifyCode.DoesNotExist:
+        verify_code=VerifyCode(phone=phone,code=code,type=type,last_modify= datetime.datetime.now().strftime( '%Y-%m-%d %H:%M:%S' ));
+        verify_code.save()
+        sendsms(phone, tpl_id, tpl_value) #请求发送短信
+        response["result"] = "验证码已发送"
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
 
-def checkverifycode(request,phone,srv_type,sms_code):
-    data='{"result":"success"}'
-    response=json.loads(data)
-    return HttpResponse(json.dumps(response, ensure_ascii=False))  
+def checkverifycode(request,phone,type,code):
+    response = OrderedDict()
+    try:
+        m = re.match(r'(^\d{11}$)',phone)
+        if m == None:
+            raise ArgumentException("invalid argument:phone") 
+        verify_code = VerifyCode.objects.get(phone=phone,type=type,code=code)
+        response["result"] = "success"
+    except ArgumentException, e:
+        response['result'] = e.errors
+    except VerifyCode.DoesNotExist:
+        response["result"] = "fail"
+    except Exception, e:
+        response['result'] = "fail"
+    finally:
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
 
 @api_view(['GET',])
 def getagreement(request):
