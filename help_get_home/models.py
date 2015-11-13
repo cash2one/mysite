@@ -508,7 +508,7 @@ class UserInfo(models.Model):
     type = models.IntegerField(blank=True, null=True)
     status = models.IntegerField(blank=True, null=True)
     verify_status = models.IntegerField(blank=True, null=True)
-    create_time = models.DateTimeField(blank=True, null=True)
+    create_time = models.DateTimeField(auto_now_add=True,blank=True, null=True)
 
     class Meta:
         managed = False

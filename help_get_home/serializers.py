@@ -23,9 +23,10 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     type = serializers.IntegerField(required=False,default=0)
     verify_status = serializers.IntegerField(required=False,default=1)
     status = serializers.IntegerField(required=False,default=1)
+    create_time = serializers.DateTimeField(required=False,default = datetime.datetime.now)
     class Meta:
         model = UserInfo
-        fields = ('phone','pwd','sex','address_id','type','verify_status','status')
+        fields = ('phone','pwd','sex','address_id','type','verify_status','status','create_time')
 class ShopSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ShopInfo

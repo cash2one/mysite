@@ -79,6 +79,12 @@ def checktoken(user_id,key):
     except Exception, e:
         raise Excetion("token exception:" + str(e))
   
+def checkcode(phone,type,code):
+    try:
+        verify_code = VerifyCode.objects.get(phone=phone,type=type,code=code)
+        return True
+    except VerifyCode.DoesNotExist:
+        return False
 class PictureForm(forms.Form):   
     imagefile = forms.ImageField()  
 def image(request,name):
@@ -272,33 +278,38 @@ def login(request):
         return HttpResponse(json)
 @api_view(['POST'])
 def register(request):
-    if request.method == 'POST':
-        response = OrderedDict()
+    response = OrderedDict()
+    try:
+        phone = request.data["phone"]
+        verify_code = request.data["verify_code"]
+        pwd = request.data["pwd"]
+        if not checkcode(phone,1,verify_code): 
+            raise Exception,"验证码错误"
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            try:
-                user_info = UserInfo.objects.get(phone=request.data["phone"])
-                auth_user = User(id=user_info.user_id,username=request.data["phone"],   \
-                                 password=request.data['pwd'], \
+            user_info = UserInfo.objects.get(phone=phone)
+            auth_user = User(id=user_info.user_id,username=phone,   \
+                                 password=pwd, \
                                  is_staff=1,is_active=1,is_superuser=0)
-                auth_user.save()
-                key = createtoken(request.data['phone'])
-                response['result'] = 'success'
-                response['user_id'] = user_info.user_id 
-                response['key'] = key
-            except UserInfo.DoesNotExist:
-                response['result'] = 'db error'
-                response['user_id'] = 0
+            auth_user.save()
+            key = createtoken(phone)
+            response['result'] = 'success'
+            response['user_id'] = user_info.user_id 
+            response['key'] = key
         else:
             response['result'] = '用户已存在'
-            response['user_id'] = 0
+    except Exception, e:
+        response['result'] = str(e)
+    except UserInfo.DoesNotExist:
+        response['result'] = 'db error'
+    finally:
         if not response.has_key('key'):
             response['key'] = ''
+        if not response.has_key('user_id'):
+            response['user_id'] = 0
         json= JSONRenderer().render(response)
         return HttpResponse(json)
-    else:
-        return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
 
 @api_view(['POST'])
 def unlicenseshoper(request):
@@ -380,6 +391,7 @@ def resetpwd(request):
         response=json.loads(ret)
         return HttpResponse(json.dumps(response, ensure_ascii=False))  
        
+@api_view()
 def getverifycode(request,phone,type):
     response = OrderedDict()
     try:
@@ -409,18 +421,19 @@ def getverifycode(request,phone,type):
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 
+@api_view()
 def checkverifycode(request,phone,type,code):
     response = OrderedDict()
     try:
         m = re.match(r'(^\d{11}$)',phone)
         if m == None:
             raise ArgumentException("invalid argument:phone") 
-        verify_code = VerifyCode.objects.get(phone=phone,type=type,code=code)
-        response["result"] = "success"
+        if checkcode(phone,type,code):
+            response["result"] = "success"
+        else:
+            response["result"] = "fail"
     except ArgumentException, e:
         response['result'] = e.errors
-    except VerifyCode.DoesNotExist:
-        response["result"] = "fail"
     except Exception, e:
         response['result'] = "fail"
     finally:
