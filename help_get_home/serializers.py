@@ -133,6 +133,14 @@ class OrderSerializer(serializers.HyperlinkedModelSerializer):
                   'money','begin_time','end_time','address_info','order_status',   \
                   'pay_type','is_coupon','status','c_time','m_time'
                   )
+class ShoppingCartSerializer(serializers.HyperlinkedModelSerializer):
+    m_time = serializers.DateField(required=False,default = datetime.datetime.now().strftime('%Y-%m-%d'))
+    class Meta:
+        model = ShoppingCart 
+        fields = ('shopping_cartid','user_id','product_id','shop_id','product_num', \
+                  'money','srv_time','status',   \
+                  'status','m_time'
+                  )
 class MyOrderSerializer(serializers.Serializer):
     order_id = serializers.CharField(max_length=64, allow_blank=False, trim_whitespace=True)
     order_status = serializers.IntegerField()

@@ -286,7 +286,7 @@ class ProductInfo(models.Model):
     end_time = models.CharField(max_length=32, blank=True)
     price = models.IntegerField()
     product_num = models.IntegerField(blank=True, null=True)
-    product_desc = models.CharField(max_length=4000, blank=True)
+    product_desc = models.TextField(blank=True)
     sales = models.IntegerField()
     evaluate = models.IntegerField(blank=True, null=True)
     verify_status = models.IntegerField(blank=True, null=True)
@@ -337,22 +337,16 @@ class RoleInfo(models.Model):
 
 class SaleOrder(models.Model):
     order_id = models.CharField(primary_key=True, max_length=64)
+    prepayid = models.CharField(max_length=256, blank=True)
     user_id = models.IntegerField()
-    product_id = models.IntegerField()
-    shop_id = models.IntegerField()
-    product_num = models.IntegerField()
-    money = models.IntegerField()
-    begin_time = models.DateTimeField(blank=True, null=True)
-    end_time = models.DateTimeField(blank=True, null=True)
+    total = models.IntegerField()
     pay_type = models.IntegerField()
     is_coupon = models.IntegerField(blank=True, null=True)
     address_info = models.IntegerField()
     order_status = models.IntegerField()
     remark = models.CharField(max_length=256, blank=True)
-    c_time = models.DateTimeField()
     m_time = models.DateTimeField()
     status = models.IntegerField(blank=True, null=True)
-    prepayid = models.CharField(max_length=256, blank=True)
 
     class Meta:
         managed = False
@@ -408,7 +402,7 @@ class ShopInfo(models.Model):
     recommend = models.IntegerField(blank=True, null=True)
     entity = models.IntegerField(blank=True, null=True)
     level = models.IntegerField(blank=True, null=True)
-    shop_desc = models.CharField(max_length=4000, blank=True)
+    shop_desc = models.TextField(blank=True)
     shop_desc_url = models.CharField(max_length=256, blank=True)
 
     class Meta:
@@ -429,6 +423,24 @@ class ShopQuote(models.Model):
     class Meta:
         managed = False
         db_table = 'shop_quote'
+
+
+class ShoppingCart(models.Model):
+    shopping_cartid = models.CharField(primary_key=True, max_length=64)
+    order_id = models.CharField(max_length=64)
+    user_id = models.IntegerField()
+    product_id = models.IntegerField()
+    shop_id = models.IntegerField()
+    product_num = models.IntegerField()
+    money = models.IntegerField()
+    srv_time = models.DateField(blank=True, null=True)
+    status = models.IntegerField()
+    remark = models.CharField(max_length=256, blank=True)
+    m_time = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'shopping_cart'
 
 
 class SrvLimit(models.Model):
@@ -508,7 +520,7 @@ class UserInfo(models.Model):
     type = models.IntegerField(blank=True, null=True)
     status = models.IntegerField(blank=True, null=True)
     verify_status = models.IntegerField(blank=True, null=True)
-    create_time = models.DateTimeField(auto_now_add=True,blank=True, null=True)
+    create_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False

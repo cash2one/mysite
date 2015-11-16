@@ -25,7 +25,7 @@ from help_get_home.serializers import  ClassifySerializer,UserSerializer,ShopSer
         ProductSerializer,UnLicenseShoperSerializer,LicenseShoperSerializer,SrvLimitSerializer, \
         AreaSerializer,MyShopSerializer,CitySerializer,DistrictSerializer,AddrSerializer,MyAddrSerializer,    \
         OrderSerializer,MyOrderSerializer,UserCommentSerializer,AllCommentSerializer,MyShopSerializer,    \
-        AdSerializer
+        AdSerializer,ShoppingCartSerializer
 
 
 
@@ -1471,5 +1471,43 @@ def uploadheadimg(request):
         response['result'] = str(e)
 
     finally:
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+
+"""
+*=======================================================================
+*往购物车添加商品
+*=======================================================================
+"""
+@api_view(['POST'])
+def addshoppingcart(request):
+    response =  OrderedDict()
+    try:
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(uid,key)
+        if int(uid)<>request.data["user_id"]:
+            raise Exception,"Permission Denied"
+        shopping_cart_info = request.data
+        shopping_cart_info['shopping_cartid'] ="shoppingcart-" +  Common_util_pub().createOrderId()
+        serializer = ShoppingCartSerializer(data=shopping_cart_info)
+        if serializer.is_valid():
+            serializer.save()
+            response['result'] = 'success'
+            response['shopping_cartid'] = shopping_cart_info['shopping_cartid']
+        else:
+            response['result'] = serializer.errors
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except ArgumentException, e:           
+        response['result'] = e.errors
+    except Exception,e:
+        response['result'] = str(e)
+
+    finally:
+        if not response.has_key('shopping_cartid'):
+            response['shopping_cartid'] = ""
         json= JSONRenderer().render(response)
         return HttpResponse(json)
