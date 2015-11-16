@@ -1058,21 +1058,24 @@ def getmyorder(request,user_id,order_status):
                 order_dict = OrderedDict()
                 order_dict['order_id'] = temp.order_id
                 order_dict['order_status'] = temp.order_status  
-                product_info = ProductInfo.objects.get(product_id=temp.product_id)
-                order_dict['product_url'] = product_info.url
-                order_dict['product_name'] = product_info.product_name
-                shop_info = ShopInfo.objects.get(shop_id=temp.shop_id)
-                order_dict['shop_name'] = shop_info.shop_name
-                order_dict['telephone'] = shop_info.telephone
+                order_dict['real_total'] = temp.real_total
                 addr_info = AddrInfo.objects.get(id=temp.address_info)
                 order_dict['addr_info'] = addr_info.district + addr_info.area + addr_info.address
-                order_dict['price'] = temp.money
-                order_dict['product_num'] = temp.product_num
+                shopping_cart = ShoppingCart.objects.filter(order_id=temp.order_id)
+                order_dict['detail'] =[]
+                for cart_info in shopping_cart:
+                    detail = OrderedDict()
+                    product_info = ProductInfo.objects.get(product_id=cart_info.product_id)
+                    detail['product_url'] = product_info.url
+                    detail['product_name'] = product_info.product_name
+                    detail['product_num'] = cart_info.product_num
+                    shop_info = ShopInfo.objects.get(shop_id=cart_info.shop_id)
+                    detail['shop_name'] = shop_info.shop_name
+                    detail['telephone'] = shop_info.telephone
+                    order_dict['detail'].append(detail)
                 order_list.append(order_dict)
-            serializer = MyOrderSerializer(data=order_list,many = True)
-            if serializer.is_valid():
-                response['result'] = 'success'
-                response['data'] = serializer.data
+            response['result'] = 'success'
+            response['data'] = order_list
         else:
             response['result'] = '没有相应的订单'
     except KeyError, e:
