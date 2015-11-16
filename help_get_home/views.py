@@ -940,19 +940,34 @@ def addorder(request):
         checktoken(uid,key)
         if int(uid)<>request.data["user_id"]:
             raise Exception,"Permission Denied"
-        order_info = request.data
-        order_info["begin_time"] = order_info["begin_time"] + " 00:00:00" 
-        order_info["end_time"] =  order_info["end_time"] + " 00:00:00"
-        product_info = ProductInfo.objects.get(product_id = order_info["product_id"])
-        order_info['order_id'] = Common_util_pub().createOrderId()
-        prepayid=unifiedorder(order_info['order_id'],product_info.product_name,str(order_info["money"]))
+        order_info={}
+        order_info["user_id"] = request.data["user_id"]
+        order_info["total"] = request.data["total"]
+        order_info["real_total"] = request.data["real_total"]
+        order_info["pay_type"] = request.data["pay_type"]
+        order_info["coupon_id"] = request.data["coupon_id"]
+        order_info["address_info"] = request.data["address_info"]
+        order_id = "order-" +  Common_util_pub().createOrderId()
+        order_info['order_id'] = order_id
+        body=""
+        shopping_cart = request.data["shopping_cart"]
+        for temp in shopping_cart:
+            shopping_cartid=temp["shopping_cartid"]
+            shopping_cart_info = ShoppingCart.objects.get(shopping_cartid=shopping_cartid)
+            shopping_cart_info.order_id=order_id
+            shopping_cart_info.status=0
+            shopping_cart_info.save()
+            product_info = ProductInfo.objects.get(product_id = shopping_cart_info.product_id)
+            product_info.product_num = product_info.product_num - 1
+            product_info.save()
+            body=body+"|"+product_info.product_name
+        prepayid=unifiedorder(order_id,body,str(order_info["real_total"]))
         order_info["prepayid"] = prepayid
         serializer = OrderSerializer(data=order_info)
         if serializer.is_valid():
             serializer.save()
-            product_info.product_num = product_info.product_num - 1
-            product_info.save()
             response['result'] = 'success'
+            response['order_id'] = order_info["order_id"]
         else:
             response['result'] = serializer.errors
     except KeyError, e:
@@ -963,6 +978,8 @@ def addorder(request):
         response['result'] = str(e)
 
     finally:
+        if not response.has_key('order_id'):
+            response['order_id'] = ""
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 """
@@ -971,7 +988,7 @@ def addorder(request):
 *=======================================================================
 """
 @api_view()
-def getpayreq(request,order_id):
+def getpayreq(request,order_id,pay_type):
     response = OrderedDict()
     try:
         uid = ""
