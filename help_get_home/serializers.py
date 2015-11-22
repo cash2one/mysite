@@ -133,7 +133,8 @@ class OrderSerializer(serializers.HyperlinkedModelSerializer):
                   'pay_type','coupon_id','status','m_time'
                   )
 class ShoppingCartSerializer(serializers.HyperlinkedModelSerializer):
-    m_time = serializers.DateField(required=False,default = datetime.datetime.now().strftime('%Y-%m-%d'))
+    srv_time = serializers.DateField(required=False,default = datetime.datetime.now().strftime('%Y-%m-%d'))
+    m_time = serializers.DateTimeField(required=False,default = datetime.datetime.now())
     class Meta:
         model = ShoppingCart 
         fields = ('shopping_cartid','user_id','product_id','shop_id','product_num', \
