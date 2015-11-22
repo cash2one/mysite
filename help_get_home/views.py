@@ -1060,7 +1060,11 @@ def getmyorder(request,user_id,order_status):
                 order_dict['order_status'] = temp.order_status  
                 order_dict['real_total'] = temp.real_total
                 addr_info = AddrInfo.objects.get(id=temp.address_info)
-                order_dict['addr_info'] = addr_info.district + addr_info.area + addr_info.address
+                addr_info = AddrInfo.objects.filter(id=temp.address_info)
+                if addr_info:
+                    order_dict['addr_info'] = addr_info[0].district + addr_info[0].area + addr_info[0].address
+                else: 
+                    order_dict['addr_info'] = ""
                 shopping_cart = ShoppingCart.objects.filter(order_id=temp.order_id)
                 order_dict['detail'] =[]
                 for cart_info in shopping_cart:
@@ -1192,20 +1196,20 @@ def getshoperorder(request,user_id,order_status):
         #checktoken(uid,key)
         if uid<>user_id:
             raise Exception,"Permission Denied"
-        shop_infos = ShopInfo.objects.filter(user_id=user_id)
+        shop_infos = ShopInfo.objects.filter(user_id__in=user_id)
         if shop_infos is None:
             raise Exception,"用户未注册店铺"
         shop_ids=[]
         for myshop in shop_infos:
             shop_ids.append(myshop.shop_id)
-        cart_infos = ShoppingCart.objects.exclude(order_id="").filter(user_id=user_id)
+        cart_infos = ShoppingCart.objects.exclude(order_id="").filter(shop_id__in=shop_ids)
 
         if cart_infos is None:
             raise Exception,"该商家没有订单"
 
         order_ids = []
-        for order_id in order_ids:
-            order_ids.append(order_id)
+        for cart_info in cart_infos:
+            order_ids.append(cart_info.order_id)
 
         if order_status==1:
             order_infos = SaleOrder.objects.filter(order_id__in=order_ids,order_status=order_status,status=1,c_time__gt=datetime.datetime.now().date())
@@ -1218,8 +1222,11 @@ def getshoperorder(request,user_id,order_status):
                 order_dict['order_id'] = temp.order_id
                 order_dict['order_status'] = temp.order_status  
                 order_dict['real_total'] = temp.real_total
-                addr_info = AddrInfo.objects.get(id=temp.address_info)
-                order_dict['addr_info'] = addr_info.district + addr_info.area + addr_info.address
+                addr_info = AddrInfo.objects.filter(id=temp.address_info)
+                if addr_info:
+                    order_dict['addr_info'] = addr_info[0].district + addr_info[0].area + addr_info[0].address
+                else: 
+                    order_dict['addr_info'] = ""
                 shopping_cart = ShoppingCart.objects.filter(order_id=temp.order_id)
                 order_dict['detail'] =[]
                 for cart_info in shopping_cart:
