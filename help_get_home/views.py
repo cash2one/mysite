@@ -171,10 +171,10 @@ def getsrvtype(request,srv_type):
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 @api_view()
-def getareainfo(request):
+def getareainfo(request,city,district):
     response =  OrderedDict()
     try:
-        area_infos = AreaInfo.objects.filter(status=1)
+        area_infos = AreaInfo.objects.filter(parent_id=district,status=1)
         if area_infos:
             serializer = AreaSerializer(area_infos,many = True)
             response['result'] = 'success'
@@ -1001,7 +1001,6 @@ def getpayreq(request,order_id,pay_type):
         common_util = Common_util_pub()
         data["appid"] = wxpay_conf.APPID
         data["partnerid"] = wxpay_conf.MCHID
-        data["package"] = "WXPay"
         data["noncestr"] = common_util.createNoncestr()
         data["timestamp"] = str(int(time.time())) 
         order_info = SaleOrder.objects.get(order_id=order_id)
