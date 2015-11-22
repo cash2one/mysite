@@ -1188,38 +1188,52 @@ def getshoperorder(request,user_id,order_status):
         key = ""
         uid = request.META['HTTP_USERID']
         key = request.META['HTTP_KEY']
-        checktoken(uid,key)
+        #checktoken(uid,key)
         if uid<>user_id:
             raise Exception,"Permission Denied"
         shop_infos = ShopInfo.objects.filter(user_id=user_id)
-        shop_list=[]
+        if shop_infos is None:
+            raise Exception,"用户未注册店铺"
+        shop_ids=[]
         for myshop in shop_infos:
-            shop_list.append(myshop.shop_id)
+            shop_ids.append(myshop.shop_id)
+        cart_infos = ShoppingCart.objects.exclude(order_id="").filter(user_id=user_id)
+
+        if cart_infos is None:
+            raise Exception,"该商家没有订单"
+
+        order_ids = []
+        for order_id in order_ids:
+            order_ids.append(order_id)
+
         if order_status==1:
-            order_infos = SaleOrder.objects.filter(shop_id__in=shop_list,order_status=order_status,status=1,c_time__gt=datetime.datetime.now().date())
+            order_infos = SaleOrder.objects.filter(order_id__in=order_ids,order_status=order_status,status=1,c_time__gt=datetime.datetime.now().date())
         else:
-            order_infos = SaleOrder.objects.filter(shop_id__in=shop_list,order_status=order_status,status=1)
+            order_infos = SaleOrder.objects.filter(order_id__in=order_ids,order_status=order_status,status=1)
         order_list=[]
         if order_infos:
             for temp in order_infos:
                 order_dict = OrderedDict()
                 order_dict['order_id'] = temp.order_id
                 order_dict['order_status'] = temp.order_status  
-                product_info = ProductInfo.objects.get(product_id=temp.product_id)
-                order_dict['product_url'] = product_info.url
-                order_dict['product_name'] = product_info.product_name
-                shop_info = ShopInfo.objects.get(shop_id=temp.shop_id)
-                order_dict['shop_name'] = shop_info.shop_name
-                order_dict['telephone'] = shop_info.telephone
+                order_dict['real_total'] = temp.real_total
                 addr_info = AddrInfo.objects.get(id=temp.address_info)
                 order_dict['addr_info'] = addr_info.district + addr_info.area + addr_info.address
-                order_dict['price'] = temp.money
-                order_dict['product_num'] = temp.product_num
+                shopping_cart = ShoppingCart.objects.filter(order_id=temp.order_id)
+                order_dict['detail'] =[]
+                for cart_info in shopping_cart:
+                    detail = OrderedDict()
+                    product_info = ProductInfo.objects.get(product_id=cart_info.product_id)
+                    detail['product_url'] = product_info.url
+                    detail['product_name'] = product_info.product_name
+                    detail['product_num'] = cart_info.product_num
+                    shop_info = ShopInfo.objects.get(shop_id=cart_info.shop_id)
+                    detail['shop_name'] = shop_info.shop_name
+                    detail['telephone'] = shop_info.telephone
+                    order_dict['detail'].append(detail)
                 order_list.append(order_dict)
-            serializer = MyOrderSerializer(data=order_list,many = True)
-            if serializer.is_valid():
-                response['result'] = 'success'
-                response['data'] = serializer.data
+            response['result'] = 'success'
+            response['data'] = order_list
         else:
             response['result'] = '没有相应的订单'
     except KeyError, e:
@@ -1553,15 +1567,27 @@ def getmyshoppingcart(request,user_id):
         if len(cart_infos):
             serializer = ShoppingCartSerializer(cart_infos,many = True)
             response['result'] = 'success'
-            response['data'] = serializer.data
         else:
             response['result'] = '购物车为空'
+        data=[]
+        for temp in cart_infos:
+            detail=OrderedDict()
+            detail['shopping_cartid'] = temp.shopping_cartid;
+            detail['product_id'] = temp.product_id
+            product_info = ProductInfo.objects.get(product_id=temp.product_id)
+            detail['product_url'] = product_info.url
+            detail['product_name'] = product_info.product_name
+            detail['product_num'] = temp.product_num
+            shop_info = ShopInfo.objects.get(shop_id=temp.shop_id)
+            detail['shop_name'] = shop_info.shop_name
+            detail['telephone'] = shop_info.telephone
+            data.append(detail)
     except KeyError, e:
         response['result'] = 'not authorization'
     except Exception, e:
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = []
+            response['data'] = data
         json= JSONRenderer().render(response)
         return HttpResponse(json)
