@@ -18,7 +18,7 @@ class ActivityInfo(models.Model):
     url = models.CharField(max_length=128, blank=True)
     thumbnail = models.CharField(max_length=128, blank=True)
     detail_url = models.CharField(max_length=128, blank=True)
-    detail_url_desc = models.CharField(max_length=128, blank=True)
+    detail_url_desc = models.TextField(blank=True)
     type = models.IntegerField(blank=True, null=True)
     start_time = models.DateTimeField(blank=True, null=True)
     end_time = models.DateTimeField(blank=True, null=True)

@@ -715,9 +715,9 @@ def getcityinfo(request):
 def getdistrictinfo(request,city_id):
     response =  OrderedDict()
     try:
-        district_infos = DistrictInfo.objects.filter(city_id=city_id,status=1)
-        if district_infos:
-            serializer = DistrictSerializer(district_infos,many = True)
+        area_infos = AreaInfo.objects.filter(parent_id=city_id,status=1)
+        if area_infos:
+            serializer = AreaSerializer(area_infos,many = True)
             response['result'] = 'success'
             response['data'] = serializer.data
         else:
@@ -726,7 +726,7 @@ def getdistrictinfo(request,city_id):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = district_infos
+            response['data'] = []
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 '''
