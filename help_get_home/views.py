@@ -1530,3 +1530,38 @@ def addshoppingcart(request):
             response['shopping_cartid'] = ""
         json= JSONRenderer().render(response)
         return HttpResponse(json)
+'''
+**************************我的购物车界面*******************************
+'''
+
+@api_view()
+def getmyshoppingcart(request,user_id):
+    response =  OrderedDict()
+    try:
+        uid = ""
+        key = ""
+        addr_infos= []
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if uid<>user_id:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
+        m1 = re.match(r'(^\d{1,11}$)',user_id)
+        if m1 == None  :
+            raise ArgumentException("invalid argument:user_id") 
+        cart_infos =ShoppingCart.objects.filter(user_id=user_id,status=1)
+        if len(cart_infos):
+            serializer = ShoppingCartSerializer(cart_infos,many = True)
+            response['result'] = 'success'
+            response['data'] = serializer.data
+        else:
+            response['result'] = '购物车为空'
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        if not response.has_key('data'):
+            response['data'] = []
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
