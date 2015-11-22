@@ -1578,6 +1578,7 @@ def getmyshoppingcart(request,user_id):
             product_info = ProductInfo.objects.get(product_id=temp.product_id)
             detail['product_url'] = product_info.url
             detail['product_name'] = product_info.product_name
+            detail['price'] = product_info.price
             detail['product_num'] = temp.product_num
             shop_info = ShopInfo.objects.get(shop_id=temp.shop_id)
             detail['shop_name'] = shop_info.shop_name
