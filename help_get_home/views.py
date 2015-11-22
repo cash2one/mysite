@@ -694,9 +694,9 @@ def updatemyshopinfo(request):
 def getcityinfo(request):
     response =  OrderedDict()
     try:
-        city_infos = CityInfo.objects.filter(status=1)
+        city_infos = AreaInfo.objects.filter(parent_id=0,status=1)
         if city_infos:
-            serializer = CitySerializer(city_infos,many = True)
+            serializer = AreaSerializer(city_infos,many = True)
             response['result'] = 'success'
             response['data'] = serializer.data
         else:
@@ -705,7 +705,7 @@ def getcityinfo(request):
         response['result'] = str(e)
     finally:
         if not response.has_key('data'):
-            response['data'] = city_infos
+            response['data'] = []
         json= JSONRenderer().render(response)
         return HttpResponse(json)
 '''
