@@ -31,6 +31,7 @@ class ActivityInfo(models.Model):
 
 
 class ActivityShop(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
     activity_id = models.IntegerField()
     shop_id = models.IntegerField()
     status = models.IntegerField(blank=True, null=True)
