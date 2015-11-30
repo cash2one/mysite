@@ -43,6 +43,7 @@ import django.forms as forms
 import sys
 import re
 from collections import OrderedDict 
+from urllib import urlencode
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -1597,5 +1598,77 @@ def getmyshoppingcart(request,user_id):
     finally:
         if not response.has_key('data'):
             response['data'] = data
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+"""
+*=======================================================================
+*发送短信
+*=======================================================================
+"""
+@api_view(['POST'])
+def sendordersms(request):
+    response =  OrderedDict()
+    try:
+        tpl_id = '7726' #申请的短信模板ID,根据实际情况修改 
+        tpl_value = OrderedDict() #短信模板变量,根据实际情况修改
+        mobile = request.data["mobile"]
+        '''
+        tpl_value["order"] = request.data["order"]
+        tpl_value["sname"] = request.data["sname"]
+        tpl_value["number"] = request.data["number"]
+        tpl_value["price"] = request.data["price"]
+        tpl_value["name"] = request.data["name"]
+        tpl_value["phone"] = request.data["phone"]
+        tpl_value["address"] = request.data["address"]
+        str=[]
+        for key,value in urlencode(tpl_value).items():
+            temp = "#"+ key + "#=" + value  
+            str.append(temp)
+            str.append("&")
+        del str[-1]
+        sms="".join(str)
+        response["sms"] = sms
+        '''
+        mobile = request.data["mobile"]
+        tpl_value='#order#=' + request.data["order"] + '&'
+        tpl_value= tpl_value + '#sname#=' + request.data["sname"].encode("UTF-8") + '&'
+        tpl_value= tpl_value + '#number#=' + request.data["number"] + '&'
+        tpl_value= tpl_value + '#price#=' + request.data["price"] + '&'
+        tpl_value= tpl_value + '#name#=' + request.data["name"].encode("UTF-8") + '&'
+        tpl_value= tpl_value + '#phone#=' + request.data["phone"] + '&'
+        tpl_value= tpl_value + '#address#=' + request.data["address"].encode("UTF-8") 
+        sendsms(mobile,tpl_id,tpl_value)
+        response['result'] = 'success'
+    except Exception,e:
+        response['result'] = str(e)
+
+    finally:
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+
+@api_view()
+def getalltype(request):
+    response=OrderedDict()
+    try:
+        classify_info = ClassifyInfo.objects.filter(parent_id=1)
+        data=[]
+        if classify_info :
+            for temp in classify_info:
+                classify_dict = OrderedDict()
+                classify_dict["id"] = temp.id
+                classify_dict["name"] = temp.name
+                data.append(classify_dict)
+            response['result'] = 'success' 
+            response['data'] = data
+        else:
+            response['result'] = '没有分类信息'
+            response['data'] = []
+    except ClassifyInfo.DoesNotExist:
+        response['result'] = '没有分类信息'
+        response['data'] = []
+    except Exception, e:
+        response['result'] = 'failed'
+        response['data'] = str(e)
+    finally:
         json= JSONRenderer().render(response)
         return HttpResponse(json)

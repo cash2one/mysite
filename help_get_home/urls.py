@@ -53,6 +53,8 @@ urlpatterns = patterns('',
             url(r'^createtoken/(.+)/$',views.createtoken,name='createtoken'),
             url(r'^getad/(.+)/$',views.getad,name='getad'),
             url(r'^getdetailad/(.+)/$',views.getdetailad,name='getdetailad'),
+            url(r'^sendordersms/$',views.sendordersms,name='sendordersms'),
+            url(r'^getalltype/$',views.getalltype,name='getalltype'),
             url(r'^', include(router.urls)),
 
             )
