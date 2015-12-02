@@ -1610,9 +1610,9 @@ def sendordersms(request):
     response =  OrderedDict()
     try:
         tpl_id = '7726' #申请的短信模板ID,根据实际情况修改 
+        '''
         tpl_value = OrderedDict() #短信模板变量,根据实际情况修改
         mobile = request.data["mobile"]
-        '''
         tpl_value["order"] = request.data["order"]
         tpl_value["sname"] = request.data["sname"]
         tpl_value["number"] = request.data["number"]
@@ -1629,22 +1629,26 @@ def sendordersms(request):
         sms="".join(str)
         response["sms"] = sms
         '''
-        mobile = request.data["mobile"]
-        tpl_value='#order#=' + request.data["order"] + '&'
-        tpl_value= tpl_value + '#sname#=' + request.data["sname"].encode("UTF-8") + '&'
-        tpl_value= tpl_value + '#number#=' + request.data["number"] + '&'
-        tpl_value= tpl_value + '#price#=' + request.data["price"] + '&'
-        tpl_value= tpl_value + '#name#=' + request.data["name"].encode("UTF-8") + '&'
-        tpl_value= tpl_value + '#phone#=' + request.data["phone"] + '&'
-        tpl_value= tpl_value + '#address#=' + request.data["address"].encode("UTF-8") 
-        sendsms(mobile,tpl_id,tpl_value)
+        data = JSONParser().parse(request)
+        mobile = data["mobile"]
+        tpl_value = ""
+        tpl_value='#order#=' + data["order"] + '&'
+        tpl_value= tpl_value + '#number#=' + data["number"] + '&'
+        tpl_value= tpl_value + '#price#=' + data["price"] + '&'
+        tpl_value= tpl_value + '#name#=' + data["name"] + '&'
+        #tpl_value= tpl_value + '#phone#=' + data["user_phone"] + '&'
+        tpl_value= tpl_value + '#address#=' + request.data["address"] 
+        #tpl_value = '#order#=test-order&#sname#=iphone6s&#number#=1&#price#=1&#name#=charles&#phone#=13476264397&#address#=广州' #短信模板变量,根据实际情况修改
         response['result'] = 'success'
+        sendsms(mobile,tpl_id,tpl_value)
     except Exception,e:
         response['result'] = str(e)
 
     finally:
-        json= JSONRenderer().render(response)
-        return HttpResponse(json)
+        #response=json.loads(data)
+        return HttpResponse(json.dumps(response, ensure_ascii=False))  
+        #json= JSONRenderer().render(response)
+        #return HttpResponse(json)
 
 @api_view()
 def getalltype(request):
