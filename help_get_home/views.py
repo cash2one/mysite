@@ -1153,24 +1153,18 @@ def updateshoppingcart(request):
         m= re.match(r'([0-1])',status)
         if m == None  :
             raise ArgumentException("invalid argument:status only can be 0-1") 
-        order_info = SaleOrder.objects.get(order_id=request.data['order_id'])
-        if int(uid)<>order_info.user_id:
+        cart_info = ShoppingCart.objects.get(shopping_cartid=request.data['shopping_cartid'])
+        if int(uid)<>cart_info.user_id:
             raise Exception,"Permission Denied"
-        order_info.status = request.data['status']
-        order_info.save()
+        cart_info.status = request.data['status']
+        cart_info.save()
         response['result'] = 'success'
-        product_info = ProductInfo.objects.get(product_id = order_info.product_id)
-        if status=='0':
-            product_info.product_num = product_info.product_num + 1
-        if status=='1':
-            product_info.product_num = product_info.product_num - 1
-        product_info.save()
     except KeyError, e:
         response['result'] = 'not authorization'
     except ArgumentException, e:           
         response['result'] = e.errors
     except SaleOrder.DoesNotExist:
-        response['result'] = '订单不存在'
+        response['result'] = '商品不存在'
     except Exception,e:
         response['result'] = str(e)
 
