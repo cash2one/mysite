@@ -46,7 +46,7 @@ class AddrInfo(models.Model):
     id = models.BigIntegerField(primary_key=True)
     user_id = models.IntegerField()
     name = models.CharField(max_length=128, blank=True)
-    telephone = models.BigIntegerField()
+    telephone = models.CharField(max_length=64, blank=True)
     city = models.CharField(max_length=128, blank=True)
     district = models.CharField(max_length=128, blank=True)
     area = models.CharField(max_length=256, blank=True)
@@ -195,6 +195,19 @@ class ClassifyInfo(models.Model):
         db_table = 'classify_info'
 
 
+class DateStock(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    product_id = models.IntegerField(blank=True, null=True)
+    special_date = models.DateField(blank=True, null=True)
+    product_num = models.IntegerField(blank=True, null=True)
+    sales = models.IntegerField(blank=True, null=True)
+    created = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'date_stock'
+
+
 class DistrictInfo(models.Model):
     district_id = models.BigIntegerField(primary_key=True)
     city_id = models.BigIntegerField()
@@ -302,6 +315,21 @@ class ProductInfo(models.Model):
         db_table = 'product_info'
 
 
+class ProductStock(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    shop_id = models.IntegerField(blank=True, null=True)
+    product_id = models.IntegerField(blank=True, null=True)
+    stock_type = models.IntegerField(blank=True, null=True)
+    left_num = models.IntegerField(blank=True, null=True)
+    created = models.DateTimeField(blank=True, null=True)
+    start_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'product_stock'
+
+
 class ResourceInfo(models.Model):
     id = models.IntegerField(primary_key=True)  # AutoField?
     name = models.CharField(max_length=45)
@@ -382,8 +410,8 @@ class ShopInfo(models.Model):
     shop_url = models.CharField(max_length=500, blank=True)
     type = models.IntegerField(blank=True, null=True)
     shoper = models.CharField(max_length=128, blank=True)
-    shoper_phone = models.BigIntegerField(blank=True, null=True)
-    telephone = models.BigIntegerField()
+    shoper_phone = models.CharField(max_length=32, blank=True)
+    telephone = models.CharField(max_length=64, blank=True)
     srv_type = models.IntegerField(blank=True, null=True)
     srv_sub_type = models.CharField(max_length=128, blank=True)
     srv_community = models.CharField(max_length=512)
@@ -513,12 +541,12 @@ class UserFeedback(models.Model):
 
 class UserInfo(models.Model):
     user_id = models.IntegerField(primary_key=True)
-    phone = models.BigIntegerField(unique=True)
+    phone = models.CharField(unique=True, max_length=64, blank=True)
     head_url = models.CharField(max_length=500, blank=True)
     pwd = models.CharField(max_length=500, blank=True)
     nick = models.CharField(max_length=500, blank=True)
     sex = models.IntegerField(blank=True, null=True)
-    address_id = models.IntegerField()
+    address_id = models.IntegerField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
     status = models.IntegerField(blank=True, null=True)
     verify_status = models.IntegerField(blank=True, null=True)
