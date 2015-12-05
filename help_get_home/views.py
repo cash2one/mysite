@@ -1671,3 +1671,32 @@ def getalltype(request):
     finally:
         json= JSONRenderer().render(response)
         return HttpResponse(json)
+'''
+************************删除我的地址界面*********************************
+'''
+
+@api_view(['POST'])
+def delmyaddress(request):
+    response =  OrderedDict()
+    try:
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if int(uid)<>request.data["user_id"]:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
+        addr_info = AddrInfo.objects.get(id=request.data["id"])
+        addr_info.status = request.data['status']
+        addr_info.save()
+        response['result'] = 'success'
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except AddrInfo.DoesNotExist:
+        response['result'] = '地址不存在'
+    except Exception,e:
+        response['result'] = str(e)
+
+    finally:
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
