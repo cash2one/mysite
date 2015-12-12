@@ -86,6 +86,25 @@ def checkcode(phone,type,code):
         return True
     except VerifyCode.DoesNotExist:
         return False
+"""
+*=======================================================================
+*修改订单状态
+*=======================================================================
+"""
+def queryorderstatus(out_trade_no):
+    order_query = OrderQuery_pub()
+    order_query.setParameter("out_trade_no",out_trade_no)
+    query_result = order_query.getResult()
+    flag = False
+    if query_result["return_code"] == "SUCCESS":  
+        if query_result["result_code"] == "SUCCESS":
+            if query_result["trade_state"] == "SUCCESS":
+                flag = True
+                order_info = SaleOrder.objects.get(order_id=out_trade_no,status=1)
+                if order_info.order_status==0 :
+                    order_info.order_status=1
+                    order_info.save()
+    return flag
 class PictureForm(forms.Form):   
     imagefile = forms.ImageField()  
 def image(request,name):
@@ -811,6 +830,11 @@ def updatemyaddress(request):
         if int(uid)<>request.data["user_id"]:
             raise Exception,"Permission Denied"
         checktoken(uid,key)
+        if int(request.data['addr_type'])==1:
+            addr_infos = AddrInfo.objects.filter(user_id=request.data["user_id"],status=1)
+            for data in addr_infos:
+                data.addr_type=0
+                data.save()
         addr_info = AddrInfo.objects.get(id=request.data["id"])
         serializer =AddrSerializer(addr_info,data=request.data)
         if serializer.is_valid():
@@ -1052,7 +1076,10 @@ def getmyorder(request,user_id,order_status):
         checktoken(uid,key)
         if uid<>user_id:
             raise Exception,"Permission Denied"
-        order_infos = SaleOrder.objects.filter(user_id=user_id,order_status=order_status,status=1)
+        if int(order_status)==1:
+            order_infos = SaleOrder.objects.filter(user_id=user_id,order_status__in=[0,1],status=1)
+        else:
+            order_infos = SaleOrder.objects.filter(user_id=user_id,order_status=order_status,status=1)
         order_list=[]
         if order_infos:
             for temp in order_infos:
@@ -1060,8 +1087,9 @@ def getmyorder(request,user_id,order_status):
                 order_dict['order_id'] = temp.order_id
                 order_dict['order_status'] = temp.order_status  
                 order_dict['real_total'] = temp.real_total
-                addr_info = AddrInfo.objects.get(id=temp.address_info)
                 addr_info = AddrInfo.objects.filter(id=temp.address_info)
+                if not queryorderstatus(temp.order_id):
+                    continue
                 if addr_info:
                     order_dict['addr_info'] = addr_info[0].district + addr_info[0].area + addr_info[0].address
                 else: 
@@ -1074,6 +1102,7 @@ def getmyorder(request,user_id,order_status):
                     detail['product_url'] = product_info.url
                     detail['product_name'] = product_info.product_name
                     detail['product_num'] = cart_info.product_num
+                    detail['price'] = product_info.price
                     shop_info = ShopInfo.objects.get(shop_id=cart_info.shop_id)
                     detail['shop_name'] = shop_info.shop_name
                     detail['telephone'] = shop_info.telephone
@@ -1083,8 +1112,8 @@ def getmyorder(request,user_id,order_status):
             response['data'] = order_list
         else:
             response['result'] = '没有相应的订单'
-    except KeyError, e:
-        response['result'] = 'not authorization'
+    #except KeyError, e:
+    #    response['result'] = 'not authorization'
     except ArgumentException, e:           
         response['result'] = e.errors
     except Exception, e:
@@ -1319,11 +1348,11 @@ def getusercomment(request,product_id):
             response['data'] = []
         json= JSONRenderer().render(response)
         return HttpResponse(json)
-@api_view()
-def searchproduct(request,product_name):
+@api_view(['POST'])
+def searchproduct(request):
     response =  OrderedDict()
     try:
-
+        product_name = request.data["product_name"]
         product_info = ProductInfo.objects.filter(product_name__contains = product_name,verify_status=1,status=1)
         if product_info:
             serializer = ProductSerializer(product_info,many = True)
