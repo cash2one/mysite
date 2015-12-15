@@ -46,6 +46,7 @@ from collections import OrderedDict
 from urllib import urlencode
 reload(sys)
 sys.setdefaultencoding('utf-8')
+#log=logging.getLogger('test1')
 
 class ArgumentException(Exception):
     def __init__(self,errors):
@@ -96,14 +97,16 @@ def queryorderstatus(out_trade_no):
     order_query.setParameter("out_trade_no",out_trade_no)
     query_result = order_query.getResult()
     flag = False
-    if query_result["return_code"] == "SUCCESS":  
-        if query_result["result_code"] == "SUCCESS":
-            if query_result["trade_state"] == "SUCCESS":
-                flag = True
-                order_info = SaleOrder.objects.get(order_id=out_trade_no,status=1)
-                if order_info.order_status==0 :
-                    order_info.order_status=1
-                    order_info.save()
+    if query_result["return_code"] != "SUCCESS":  
+        return flag
+    if query_result["result_code"] != "SUCCESS":
+        return flag
+    if query_result["trade_state"] == "SUCCESS":
+        flag = True
+        order_info = SaleOrder.objects.get(order_id=out_trade_no,status=1)
+        if order_info.order_status==0 :
+            order_info.order_status=1
+            order_info.save()
     return flag
 class PictureForm(forms.Form):   
     imagefile = forms.ImageField()  
@@ -1061,6 +1064,7 @@ def getpayreq(request,order_id,pay_type):
 
 @api_view()
 def getmyorder(request,user_id,order_status):
+    #log.error("test")
     response =  OrderedDict()
     try:
         m1 = re.match(r'(^\d{1,11}$)',user_id)
@@ -1090,8 +1094,14 @@ def getmyorder(request,user_id,order_status):
                 addr_info = AddrInfo.objects.filter(id=temp.address_info)
                 if not queryorderstatus(temp.order_id):
                     continue
+                address=""
+                name=""
+                telephone=""
                 if addr_info:
                     order_dict['addr_info'] = addr_info[0].district + addr_info[0].area + addr_info[0].address
+                    address=order_dict["addr_info"]
+                    name = addr_info[0].name
+                    telephone = addr_info[0].telephone
                 else: 
                     order_dict['addr_info'] = ""
                 shopping_cart = ShoppingCart.objects.filter(order_id=temp.order_id)
@@ -1107,6 +1117,8 @@ def getmyorder(request,user_id,order_status):
                     detail['shop_name'] = shop_info.shop_name
                     detail['telephone'] = shop_info.telephone
                     order_dict['detail'].append(detail)
+                    sendordersms("13676264367",temp.order_id,detail['product_name'],detail["product_num"] \
+                            ,detail["price"],name,telephone,address)            
                 order_list.append(order_dict)
             response['result'] = 'success'
             response['data'] = order_list
@@ -1629,50 +1641,28 @@ def getmyshoppingcart(request,user_id):
 *发送短信
 *=======================================================================
 """
-@api_view(['POST'])
-def sendordersms(request):
+def sendordersms(shop_phone,order_id,product_name,number,price,name,phone,address):
     response =  OrderedDict()
     try:
         tpl_id = '7726' #申请的短信模板ID,根据实际情况修改 
         '''
-        tpl_value = OrderedDict() #短信模板变量,根据实际情况修改
-        mobile = request.data["mobile"]
-        tpl_value["order"] = request.data["order"]
-        tpl_value["sname"] = request.data["sname"]
-        tpl_value["number"] = request.data["number"]
-        tpl_value["price"] = request.data["price"]
-        tpl_value["name"] = request.data["name"]
-        tpl_value["phone"] = request.data["phone"]
-        tpl_value["address"] = request.data["address"]
-        str=[]
-        for key,value in urlencode(tpl_value).items():
-            temp = "#"+ key + "#=" + value  
-            str.append(temp)
-            str.append("&")
-        del str[-1]
-        sms="".join(str)
-        response["sms"] = sms
-        '''
-        data = JSONParser().parse(request)
-        mobile = data["mobile"]
         tpl_value = ""
-        tpl_value='#order#=' + data["order"] + '&'
-        tpl_value= tpl_value + '#number#=' + data["number"] + '&'
-        tpl_value= tpl_value + '#price#=' + data["price"] + '&'
-        tpl_value= tpl_value + '#name#=' + data["name"] + '&'
-        #tpl_value= tpl_value + '#phone#=' + data["user_phone"] + '&'
-        tpl_value= tpl_value + '#address#=' + request.data["address"] 
-        #tpl_value = '#order#=test-order&#sname#=iphone6s&#number#=1&#price#=1&#name#=charles&#phone#=13476264397&#address#=广州' #短信模板变量,根据实际情况修改
-        response['result'] = 'success'
+        tpl_value='#order#=' + order_id + '&'
+        tpl_value= tpl_value + '#sname#=' + product_name + '&'
+        tpl_value= tpl_value + '#number#=' + number + '&'
+        tpl_value= tpl_value + '#price#=' + price + '&'
+        tpl_value= tpl_value + '#name#=' + name + '&'
+        tpl_value= tpl_value + '#phone#=' + phone + '&'
+        tpl_value= tpl_value + '#address#=' + address 
+        '''
+        tpl_value = '#order#=test-order&#sname#=iphone6s&#number#=1&#price#=1&#name#=charles&#phone#=13476264397&#address#=test' #短信模板变量,根据实际情况修改
+        print "tpl_value=%s" % (tpl_value)
         sendsms(mobile,tpl_id,tpl_value)
     except Exception,e:
-        response['result'] = str(e)
+        return False
 
     finally:
-        #response=json.loads(data)
-        return HttpResponse(json.dumps(response, ensure_ascii=False))  
-        #json= JSONRenderer().render(response)
-        #return HttpResponse(json)
+        return True  
 
 @api_view()
 def getalltype(request):
