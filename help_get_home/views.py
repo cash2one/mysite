@@ -1662,7 +1662,7 @@ def sendordersms(shop_phone,order_id,product_name,number,price,name,phone,addres
         '''
         tpl_value = '#order#=test-order&#sname#=iphone6s&#number#=1&#price#=1&#name#=charles&#phone#=13476264397&#address#=test' #短信模板变量,根据实际情况修改
         print "tpl_value=%s" % (tpl_value)
-        sendsms(mobile,tpl_id,tpl_value)
+        sendsms(shop_phone,tpl_id,tpl_value)
     except Exception,e:
         return False
 
