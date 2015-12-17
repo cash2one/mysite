@@ -1109,11 +1109,13 @@ def getmyorder(request,user_id,order_status):
                 for cart_info in shopping_cart:
                     detail = OrderedDict()
                     product_info = ProductInfo.objects.get(product_id=cart_info.product_id)
+                    detail['product_id'] = product_info.product_id
                     detail['product_url'] = product_info.url
                     detail['product_name'] = product_info.product_name
                     detail['product_num'] = cart_info.product_num
                     detail['price'] = product_info.price
                     shop_info = ShopInfo.objects.get(shop_id=cart_info.shop_id)
+                    detail['shop_id'] = shop_info.shop_id
                     detail['shop_name'] = shop_info.shop_name
                     detail['telephone'] = shop_info.telephone
                     order_dict['detail'].append(detail)
@@ -1298,6 +1300,7 @@ def getshoperorder(request,user_id,order_status):
 def addusercomment(request):
     response =  OrderedDict()
     try:
+        '''
         uid = ""
         key = ""
         uid = request.META['HTTP_USERID']
@@ -1305,13 +1308,15 @@ def addusercomment(request):
         checktoken(uid,key)
         if int(uid)<>request.data["user_id"]:
             raise Exception,"Permission Denied"
-        serializer = UserCommentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            response['result'] = 'success'
-        else:
-            response['result'] = '数据格式错误'
-            response['error_info'] = str(serializer.errors)
+        '''
+        for data in request.data:
+            serializer = UserCommentSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                response['result'] = 'success'
+            else:
+                response['result'] = '数据格式错误'
+                response['error_info'] = str(serializer.errors)
     except ArgumentException, e:           
         response['result'] = e.errors
     except Exception,e:
