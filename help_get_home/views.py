@@ -1,5 +1,4 @@
 #coding=utf-8
-default_encoding='utf-8'
 from django.http import HttpResponse
 from django.utils.translation import ugettext as _
 from django.conf import settings
@@ -32,7 +31,6 @@ from help_get_home.serializers import  ClassifySerializer,UserSerializer,ShopSer
 from rest_framework.renderers import JSONRenderer
 from help_get_home.models import *
 from help_get_home.wxzhifu import *
-from help_get_home.sendsms import *
 import datetime
 import os
 import json
@@ -43,10 +41,18 @@ import django.forms as forms
 import sys
 import re
 from collections import OrderedDict 
+from sendsms import sendsms
+import urllib,json
 from urllib import urlencode
+'''
 reload(sys)
 sys.setdefaultencoding('utf-8')
-#log=logging.getLogger('test1')
+'''
+import logging
+import django.utils.log
+import logging.handlers
+import codecs
+log=logging.getLogger('mylog')
 
 class ArgumentException(Exception):
     def __init__(self,errors):
@@ -96,6 +102,7 @@ def queryorderstatus(out_trade_no):
     order_query = OrderQuery_pub()
     order_query.setParameter("out_trade_no",out_trade_no)
     query_result = order_query.getResult()
+    print "==============pay_result=%s================" % query_result
     flag = False
     if query_result["return_code"] != "SUCCESS":  
         return flag
@@ -104,9 +111,8 @@ def queryorderstatus(out_trade_no):
     if query_result["trade_state"] == "SUCCESS":
         flag = True
         order_info = SaleOrder.objects.get(order_id=out_trade_no,status=1)
-        if order_info.order_status==0 :
-            order_info.order_status=1
-            order_info.save()
+        order_info.order_status=1
+        order_info.save()
     return flag
 class PictureForm(forms.Form):   
     imagefile = forms.ImageField()  
@@ -1064,7 +1070,6 @@ def getpayreq(request,order_id,pay_type):
 
 @api_view()
 def getmyorder(request,user_id,order_status):
-    #log.error("test")
     response =  OrderedDict()
     try:
         m1 = re.match(r'(^\d{1,11}$)',user_id)
@@ -1073,6 +1078,8 @@ def getmyorder(request,user_id,order_status):
         m2 = re.match(r'([0-3])',order_status)
         if m2 == None  :
             raise ArgumentException("invalid argument:order_status") 
+        log.info("[getmyorder] uid=%s,order_status=%s",str(user_id),str(order_status))
+        '''
         uid = ""
         key = ""
         uid = request.META['HTTP_USERID']
@@ -1080,6 +1087,7 @@ def getmyorder(request,user_id,order_status):
         checktoken(uid,key)
         if uid<>user_id:
             raise Exception,"Permission Denied"
+        '''
         if int(order_status)==1:
             order_infos = SaleOrder.objects.filter(user_id=user_id,order_status__in=[0,1],status=1)
         else:
@@ -1088,20 +1096,23 @@ def getmyorder(request,user_id,order_status):
         if order_infos:
             for temp in order_infos:
                 order_dict = OrderedDict()
+                pay_result = False
+                if temp.order_status==0:
+                    pay_result = queryorderstatus(temp.order_id)
+                    if not pay_result:
+                        continue
                 order_dict['order_id'] = temp.order_id
                 order_dict['order_status'] = temp.order_status  
                 order_dict['real_total'] = temp.real_total
                 addr_info = AddrInfo.objects.filter(id=temp.address_info)
-                if not queryorderstatus(temp.order_id):
-                    continue
                 address=""
                 name=""
-                telephone=""
+                user_phone=""
                 if addr_info:
                     order_dict['addr_info'] = addr_info[0].district + addr_info[0].area + addr_info[0].address
                     address=order_dict["addr_info"]
                     name = addr_info[0].name
-                    telephone = addr_info[0].telephone
+                    user_phone = addr_info[0].telephone
                 else: 
                     order_dict['addr_info'] = ""
                 shopping_cart = ShoppingCart.objects.filter(order_id=temp.order_id)
@@ -1117,10 +1128,22 @@ def getmyorder(request,user_id,order_status):
                     shop_info = ShopInfo.objects.get(shop_id=cart_info.shop_id)
                     detail['shop_id'] = shop_info.shop_id
                     detail['shop_name'] = shop_info.shop_name
-                    detail['telephone'] = shop_info.telephone
+                    detail['telephone'] = shop_info.shoper_phone
                     order_dict['detail'].append(detail)
-                    sendordersms("13676264367",temp.order_id,detail['product_name'],detail["product_num"] \
-                            ,detail["price"],name,telephone,address)            
+                    log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
+                            str(detail["price"]),name,str(user_phone),address)
+                    if pay_result:
+                        log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
+                            str(detail["price"]),name,str(user_phone),address)
+                        sendordersms("7726",shop_info.shoper_phone,temp.order_id,detail['product_name'],detail["product_num"] \
+                            ,detail["price"],name,user_phone,address,0)            
+                        '''
+                        user_info = UserInfo.objects.get(user_id=temp.user_id)
+                        log.info("[getmyorder] to_phone=%s,order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",user_info.phone,temp.order_id,detail['product_name'],str(detail["product_num"]), \
+                            str(detail["price"]),name,str(user_phone),address)
+                        sendordersms("7743",user_info.phone,temp.order_id,detail['product_name'],detail["product_num"] \
+                            ,detail["price"],name,user_phone,address,detail['telephone'])            
+                        '''
                 order_list.append(order_dict)
             response['result'] = 'success'
             response['data'] = order_list
@@ -1646,23 +1669,52 @@ def getmyshoppingcart(request,user_id):
 *发送短信
 *=======================================================================
 """
-def sendordersms(shop_phone,order_id,product_name,number,price,name,phone,address):
-    response =  OrderedDict()
+'''
+def sendsms( mobile, tpl_id, tpl_value):
     try:
-        tpl_id = '7726' #申请的短信模板ID,根据实际情况修改 
-        '''
+        test='#order#=order-20151209172105-dat6n9uw&#sname#=日常保洁每小时30元&#number#=1&#price#=30&#name#=快乐健康&#phone#=55555&#address#=萝岗区翡翠绿洲图接口'
+        print  urllib.quote(test)
+    except Exception,e:
+        print "error is:%s" % str(e.error)
+    finally:
+        log.info("[sendordersms] tpl_value=%s",str(tpl_value))
+        sendurl = 'http://v.juhe.cn/sms/send' #短信发送的URL,无需修改 
+        params = 'key=%s&mobile=%s&tpl_id=%s&tpl_value=%s' % \
+             (appkey, mobile, tpl_id, urllib.quote(tpl_value.encode('utf-8'))) #组合参数
+        wp =urllib.urlopen(sendurl+"?"+params)
+        content = wp.read() #获取接口返回内容
+ 
+        result = json.loads(content)
+ 
+    if result:
+        error_code = result['error_code']
+        if error_code == 0:
+            #发送成功
+            smsid = result['result']['sid']
+            print "sendsms success,smsid: %s" % (smsid)
+        else: 
+            #发送失败
+            print "sendsms error :(%s) %s" % (error_code, result['reason'])
+    else:
+        #请求失败
+        print "request sendsms error"
+ '''
+ 
+def sendordersms(tpl_id,mobile,order_id,product_name,number,price,name,user_phone,address,shop_phone):
+    try:
         tpl_value = ""
         tpl_value='#order#=' + order_id + '&'
         tpl_value= tpl_value + '#sname#=' + product_name + '&'
-        tpl_value= tpl_value + '#number#=' + number + '&'
-        tpl_value= tpl_value + '#price#=' + price + '&'
+        tpl_value= tpl_value + '#number#=' + str(number) + '&'
+        tpl_value= tpl_value + '#price#=' + str(price) + '&'
         tpl_value= tpl_value + '#name#=' + name + '&'
-        tpl_value= tpl_value + '#phone#=' + phone + '&'
+        tpl_value= tpl_value + '#phone#=' + str(user_phone) + '&'
         tpl_value= tpl_value + '#address#=' + address 
-        '''
-        tpl_value = '#order#=test-order&#sname#=iphone6s&#number#=1&#price#=1&#name#=charles&#phone#=13476264397&#address#=test' #短信模板变量,根据实际情况修改
-        print "tpl_value=%s" % (tpl_value)
-        sendsms(shop_phone,tpl_id,tpl_value)
+        if tpl_id=='7743':
+            tpl_value = tpl_value + "&" 
+            tpl_value= tpl_value + '#shopphone#=' +  str(shop_phone)
+        log.info("[sendordersms] tpl_value=%s",str(tpl_value))
+        sendsms(mobile,tpl_id,tpl_value)
     except Exception,e:
         return False
 
