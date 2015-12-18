@@ -1079,7 +1079,6 @@ def getmyorder(request,user_id,order_status):
         if m2 == None  :
             raise ArgumentException("invalid argument:order_status") 
         log.info("[getmyorder] uid=%s,order_status=%s",str(user_id),str(order_status))
-        '''
         uid = ""
         key = ""
         uid = request.META['HTTP_USERID']
@@ -1087,7 +1086,6 @@ def getmyorder(request,user_id,order_status):
         checktoken(uid,key)
         if uid<>user_id:
             raise Exception,"Permission Denied"
-        '''
         if int(order_status)==1:
             order_infos = SaleOrder.objects.filter(user_id=user_id,order_status__in=[0,1],status=1)
         else:
@@ -1137,20 +1135,18 @@ def getmyorder(request,user_id,order_status):
                             str(detail["price"]),name,str(user_phone),address)
                         sendordersms("7726",shop_info.shoper_phone,temp.order_id,detail['product_name'],detail["product_num"] \
                             ,detail["price"],name,user_phone,address,0)            
-                        '''
                         user_info = UserInfo.objects.get(user_id=temp.user_id)
                         log.info("[getmyorder] to_phone=%s,order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",user_info.phone,temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
                         sendordersms("7743",user_info.phone,temp.order_id,detail['product_name'],detail["product_num"] \
                             ,detail["price"],name,user_phone,address,detail['telephone'])            
-                        '''
                 order_list.append(order_dict)
             response['result'] = 'success'
             response['data'] = order_list
         else:
             response['result'] = '没有相应的订单'
-    #except KeyError, e:
-    #    response['result'] = 'not authorization'
+    except KeyError, e:
+        response['result'] = 'not authorization'
     except ArgumentException, e:           
         response['result'] = e.errors
     except Exception, e:
