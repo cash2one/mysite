@@ -24,7 +24,7 @@ from help_get_home.serializers import  ClassifySerializer,UserSerializer,ShopSer
         ProductSerializer,UnLicenseShoperSerializer,LicenseShoperSerializer,SrvLimitSerializer, \
         AreaSerializer,MyShopSerializer,CitySerializer,DistrictSerializer,AddrSerializer,MyAddrSerializer,    \
         OrderSerializer,MyOrderSerializer,UserCommentSerializer,AllCommentSerializer,MyShopSerializer,    \
-        AdSerializer,ShoppingCartSerializer
+        AdSerializer,ShoppingCartSerializer,ReorderSerializer
 
 
 
@@ -956,10 +956,6 @@ def unifiedorder(out_trade_no,body,total_fee):
     unifiedorder.setParameter("trade_type","APP")
     result = unifiedorder.getPrepayId()
     return result
-    print "*************统一下单result******************"
-    print "====================================="
-    print "%s" % result
-    print "====================================="
 '''
 ************************往购物车增加商品*********************************
 '''
@@ -1005,6 +1001,64 @@ def addorder(request):
             response['order_id'] = order_info["order_id"]
         else:
             response['result'] = serializer.errors
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except ArgumentException, e:           
+        response['result'] = e.errors
+    except Exception,e:
+        response['result'] = str(e)
+
+    finally:
+        if not response.has_key('order_id'):
+            response['order_id'] = ""
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+'''
+************************补单*********************************
+'''
+
+@api_view(['POST'])
+def reorder(request):
+    response =  OrderedDict()
+    try:
+        '''
+        uid = ""
+        key = ""
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(uid,key)
+        if int(uid)<>request.data["user_id"]:
+            raise Exception,"Permission Denied"
+        '''
+        par_orderid = request.data["par_orderid"]
+        total = request.data["total"]
+        order_info = SaleReorder.objects.filter(par_orderid=par_orderid)
+        if  order_info.count()==0 :
+            reorder_info = {}
+            reorder_info['par_orderid'] = par_orderid;
+            reorder_info['order_id'] = "order-" +  Common_util_pub().createOrderId()
+            reorder_info["total"] = request.data["total"]
+            reorder_info["pay_type"] = request.data["pay_type"]
+            cart_infos = ShoppingCart.objects.filter(order_id=par_orderid)
+            body = ""
+            for temp in cart_infos:
+                product_info = ProductInfo.objects.get(product_id = temp.product_id)
+                if body!="":
+                    body=body+"|"
+                body=body+product_info.product_name
+            prepayid=unifiedorder(reorder_info['order_id'], body,str(total))
+            reorder_info["prepayid"] = prepayid
+            serializer = ReorderSerializer(data=reorder_info)
+            if serializer.is_valid():
+                serializer.save()
+                response['result'] = 'success'
+            else:
+                response['result'] = serializer.errors
+            response['order_id'] = reorder_info['order_id']
+
+        else:
+            response['order_id'] = order_info[0].order_id
+            response['result'] = 'success'
     except KeyError, e:
         response['result'] = 'not authorization'
     except ArgumentException, e:           

@@ -132,6 +132,18 @@ class OrderSerializer(serializers.HyperlinkedModelSerializer):
                   'total','real_total','address_info','order_status',   \
                   'pay_type','coupon_id','status','m_time'
                   )
+class ReorderSerializer(serializers.HyperlinkedModelSerializer):
+    prepayid = serializers.CharField(required=False,max_length=128, trim_whitespace=True)
+    order_status = serializers.IntegerField(required=False,default=0)
+    pay_type = serializers.IntegerField(max_value=2, min_value=0,required=False,default=0)
+    status = serializers.IntegerField(required=False,default=1)
+    m_time = serializers.DateTimeField(required=False,default = datetime.datetime.now)
+    class Meta:
+        model = SaleReorder
+        fields = ('order_id','par_orderid','prepayid', \
+                  'total','order_status',   \
+                  'pay_type','status','m_time'
+                  )
 class ShoppingCartSerializer(serializers.HyperlinkedModelSerializer):
     srv_time = serializers.DateField(required=False,default = datetime.datetime.now().strftime('%Y-%m-%d'))
     m_time = serializers.DateTimeField(required=False,default = datetime.datetime.now())

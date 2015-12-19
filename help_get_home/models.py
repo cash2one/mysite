@@ -315,6 +315,18 @@ class ProductInfo(models.Model):
         db_table = 'product_info'
 
 
+class ProductProperties(models.Model):
+    id = models.IntegerField(primary_key=True)  # AutoField?
+    product_id = models.BigIntegerField(blank=True, null=True)
+    label = models.CharField(max_length=64, blank=True)
+    price = models.IntegerField(blank=True, null=True)
+    created = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'product_properties'
+
+
 class ProductStock(models.Model):
     id = models.IntegerField(primary_key=True)  # AutoField?
     shop_id = models.IntegerField(blank=True, null=True)
@@ -381,6 +393,22 @@ class SaleOrder(models.Model):
     class Meta:
         managed = False
         db_table = 'sale_order'
+
+
+class SaleReorder(models.Model):
+    order_id = models.CharField(primary_key=True, max_length=64)
+    par_orderid = models.CharField(max_length=64)
+    prepayid = models.CharField(max_length=256, blank=True)
+    total = models.IntegerField()
+    pay_type = models.IntegerField()
+    order_status = models.IntegerField()
+    remark = models.CharField(max_length=256, blank=True)
+    m_time = models.DateTimeField()
+    status = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'sale_reorder'
 
 
 class SevicePeople(models.Model):
