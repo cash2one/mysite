@@ -114,6 +114,27 @@ def queryorderstatus(out_trade_no):
         order_info.order_status=1
         order_info.save()
     return flag
+"""
+*=======================================================================
+*修改子订单状态
+*=======================================================================
+"""
+def querysuborderstatus(out_trade_no):
+    order_query = OrderQuery_pub()
+    order_query.setParameter("out_trade_no",out_trade_no)
+    query_result = order_query.getResult()
+    print "==============pay_result=%s================" % query_result
+    flag = False
+    if query_result["return_code"] != "SUCCESS":  
+        return flag
+    if query_result["result_code"] != "SUCCESS":
+        return flag
+    if query_result["trade_state"] == "SUCCESS":
+        flag = True
+        order_info = SaleReorder.objects.get(order_id=out_trade_no)
+        order_info.order_status=1
+        order_info.save()
+    return flag
 class PictureForm(forms.Form):   
     imagefile = forms.ImageField()  
 def image(request,name):
@@ -1133,6 +1154,7 @@ def getmyorder(request,user_id,order_status):
         if m2 == None  :
             raise ArgumentException("invalid argument:order_status") 
         log.info("[getmyorder] uid=%s,order_status=%s",str(user_id),str(order_status))
+        '''
         uid = ""
         key = ""
         uid = request.META['HTTP_USERID']
@@ -1140,6 +1162,7 @@ def getmyorder(request,user_id,order_status):
         checktoken(uid,key)
         if uid<>user_id:
             raise Exception,"Permission Denied"
+        '''
         if int(order_status)==1:
             order_infos = SaleOrder.objects.filter(user_id=user_id,order_status__in=[0,1],status=1)
         else:
@@ -1156,6 +1179,13 @@ def getmyorder(request,user_id,order_status):
                 order_dict['order_id'] = temp.order_id
                 order_dict['order_status'] = temp.order_status  
                 order_dict['real_total'] = temp.real_total
+                #是否有子订单
+                reorder_info = SaleReorder.objects.filter(par_orderid=temp.order_id)
+                if reorder_info.count()!=0:
+                    if querysuborderstatus(reorder_info[0].order_id):
+                        order_dict['reorder_price'] = reorder_info[0].total
+                    else:
+                        order_dict['reorder_price'] = 0
                 addr_info = AddrInfo.objects.filter(id=temp.address_info)
                 address=""
                 name=""
