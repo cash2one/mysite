@@ -249,8 +249,8 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
         regionCode = ""
         user_id = request.META['HTTP_USERID']
         key = request.META['HTTP_KEY']
-        #regioncode = request.META['HTTP_REGIONCODE']
-        regioncode=1
+        regioncode = request.META['HTTP_REGIONCODE']
+        #regioncode=1
         checktoken(user_id,key)
         m1 = re.match(r'(^\d{1,2}$)',srv_sub_type)
         m2 = re.match(r'(^\d{1,2}$)',sort_type)
@@ -1215,6 +1215,7 @@ def getmyorder(request,user_id,order_status):
                     order_dict['detail'].append(detail)
                     log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
+                    '''
                     if pay_result:
                         log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
@@ -1225,6 +1226,7 @@ def getmyorder(request,user_id,order_status):
                             str(detail["price"]),name,str(user_phone),address)
                         sendordersms("7743",user_info.phone,temp.order_id,detail['product_name'],detail["product_num"] \
                             ,detail["price"],name,user_phone,address,detail['telephone'])            
+                    '''
                 order_list.append(order_dict)
             response['result'] = 'success'
             response['data'] = order_list
