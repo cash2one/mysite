@@ -1826,3 +1826,82 @@ def delmyaddress(request):
     finally:
         json= JSONRenderer().render(response)
         return HttpResponse(json)
+'''
+**************************商品库存*******************************
+'''
+
+@api_view()
+def getproductstock(request,product_id,srv_time):
+    response =  OrderedDict()
+    try:
+        '''
+        uid = ""
+        key = ""
+        addr_infos= []
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if uid<>user_id:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
+        '''
+        m1 = re.match(r'(^\d{1,11}$)',product_id)
+        if m1 == None  :
+            raise ArgumentException("invalid argument:user_id") 
+        srv_time = srv_time + " 00:00:00"
+        product_stock = ProductStock.objects.get(product_id=product_id,start_time=srv_time)
+        response['result'] = 'success'
+        response['left_num'] = product_stock.left_num
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except ProductStock.DoesNotExist, e :
+        product_info = ProductInfo.objects.get(product_id=product_id)
+        response['result'] = 'success'
+        response['left_num'] = product_info.product_num
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        if not response.has_key('left_num'):
+            response['left_num'] = -1
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+'''
+**************************商品属性******************************
+'''
+
+@api_view()
+def getproductproperties(request,product_id):
+    response =  OrderedDict()
+    try:
+        '''
+        uid = ""
+        key = ""
+        addr_infos= []
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if uid<>user_id:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
+        '''
+        m1 = re.match(r'(^\d{1,11}$)',product_id)
+        if m1 == None  :
+            raise ArgumentException("invalid argument:user_id") 
+        product_pros = ProductProperties.objects.filter(product_id=product_id)
+        data=[]
+        for temp in product_pros:
+            product_pro=OrderedDict()
+            product_pro['label'] = temp.label
+            product_pro['price'] = temp.price
+            data.append(product_pro)
+        response['data'] = data
+        response['result'] = 'success'
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except ProductStock.DoesNotExist, e :
+        product_info = ProductInfo.objects.get(product_id=product_id)
+        response['result'] = 'success'
+        response['left_num'] = product_info.product_num
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
