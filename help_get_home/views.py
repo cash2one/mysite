@@ -1211,6 +1211,7 @@ def getmyorder(request,user_id,order_status):
                     detail['shop_id'] = shop_info.shop_id
                     detail['shop_name'] = shop_info.shop_name
                     detail['telephone'] = shop_info.shoper_phone
+                    detail['srv_time'] = cart_info.srv_time
                     order_dict['detail'].append(detail)
                     log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
