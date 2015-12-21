@@ -249,8 +249,8 @@ def getshopinfo(request,srv_sub_type,sort_type,page_num,page_size):
         regionCode = ""
         user_id = request.META['HTTP_USERID']
         key = request.META['HTTP_KEY']
-        #regioncode = request.META['HTTP_REGIONCODE']
-        regioncode=1
+        regioncode = request.META['HTTP_REGIONCODE']
+        #regioncode=1
         checktoken(user_id,key)
         m1 = re.match(r'(^\d{1,2}$)',srv_sub_type)
         m2 = re.match(r'(^\d{1,2}$)',sort_type)
@@ -1214,6 +1214,7 @@ def getmyorder(request,user_id,order_status):
                     order_dict['detail'].append(detail)
                     log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
+                    '''
                     if pay_result:
                         log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
@@ -1224,6 +1225,7 @@ def getmyorder(request,user_id,order_status):
                             str(detail["price"]),name,str(user_phone),address)
                         sendordersms("7743",user_info.phone,temp.order_id,detail['product_name'],detail["product_num"] \
                             ,detail["price"],name,user_phone,address,detail['telephone'])            
+                    '''
                 order_list.append(order_dict)
             response['result'] = 'success'
             response['data'] = order_list
@@ -1853,6 +1855,85 @@ def delmyaddress(request):
     except Exception,e:
         response['result'] = str(e)
 
+    finally:
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+'''
+**************************商品库存*******************************
+'''
+
+@api_view()
+def getproductstock(request,product_id,srv_time):
+    response =  OrderedDict()
+    try:
+        '''
+        uid = ""
+        key = ""
+        addr_infos= []
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if uid<>user_id:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
+        '''
+        m1 = re.match(r'(^\d{1,11}$)',product_id)
+        if m1 == None  :
+            raise ArgumentException("invalid argument:user_id") 
+        srv_time = srv_time + " 00:00:00"
+        product_stock = ProductStock.objects.get(product_id=product_id,start_time=srv_time)
+        response['result'] = 'success'
+        response['left_num'] = product_stock.left_num
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except ProductStock.DoesNotExist, e :
+        product_info = ProductInfo.objects.get(product_id=product_id)
+        response['result'] = 'success'
+        response['left_num'] = product_info.product_num
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        if not response.has_key('left_num'):
+            response['left_num'] = -1
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+'''
+**************************商品属性******************************
+'''
+
+@api_view()
+def getproductproperties(request,product_id):
+    response =  OrderedDict()
+    try:
+        '''
+        uid = ""
+        key = ""
+        addr_infos= []
+        uid = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        if uid<>user_id:
+            raise Exception,"Permission Denied"
+        checktoken(uid,key)
+        '''
+        m1 = re.match(r'(^\d{1,11}$)',product_id)
+        if m1 == None  :
+            raise ArgumentException("invalid argument:user_id") 
+        product_pros = ProductProperties.objects.filter(product_id=product_id)
+        data=[]
+        for temp in product_pros:
+            product_pro=OrderedDict()
+            product_pro['label'] = temp.label
+            product_pro['price'] = temp.price
+            data.append(product_pro)
+        response['data'] = data
+        response['result'] = 'success'
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except ProductStock.DoesNotExist, e :
+        product_info = ProductInfo.objects.get(product_id=product_id)
+        response['result'] = 'success'
+        response['left_num'] = product_info.product_num
+    except Exception, e:
+        response['result'] = str(e)
     finally:
         json= JSONRenderer().render(response)
         return HttpResponse(json)
