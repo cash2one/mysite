@@ -1217,18 +1217,18 @@ def getmyorder(request,user_id,order_status):
                     order_dict['detail'].append(detail)
                     log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
-                    '''
                     if pay_result:
+                        '''
                         log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
                         sendordersms("7726",shop_info.shoper_phone,temp.order_id,detail['product_name'],detail["product_num"] \
                             ,detail["price"],name,user_phone,address,0)            
+                        '''
                         user_info = UserInfo.objects.get(user_id=temp.user_id)
                         log.info("[getmyorder] to_phone=%s,order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",user_info.phone,temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
                         sendordersms("7743",user_info.phone,temp.order_id,detail['product_name'],detail["product_num"] \
                             ,detail["price"],name,user_phone,address,detail['telephone'])            
-                    '''
                 order_list.append(order_dict)
             response['result'] = 'success'
             response['data'] = order_list
@@ -1421,6 +1421,10 @@ def addusercomment(request):
             serializer = UserCommentSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
+                order_info = SaleOrder.objects.get(order_id = request.data['order_id'])
+                if order_info.order_status == 2:
+                    order_info.order_status=3
+                    order_info.save()
                 response['result'] = 'success'
             else:
                 response['result'] = '数据格式错误'
