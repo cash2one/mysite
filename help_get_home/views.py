@@ -52,7 +52,7 @@ import logging
 import django.utils.log
 import logging.handlers
 import codecs
-log=logging.getLogger('mylog')
+log=logging.getLogger('test1')
 
 class ArgumentException(Exception):
     def __init__(self,errors):
@@ -853,6 +853,7 @@ def addmyaddress(request):
 def updatemyaddress(request):
     response =  OrderedDict()
     try:
+        '''
         uid = ""
         key = ""
         uid = request.META['HTTP_USERID']
@@ -860,6 +861,7 @@ def updatemyaddress(request):
         if int(uid)<>request.data["user_id"]:
             raise Exception,"Permission Denied"
         checktoken(uid,key)
+        '''
         if int(request.data['addr_type'])==1:
             addr_infos = AddrInfo.objects.filter(user_id=request.data["user_id"],status=1)
             for data in addr_infos:
@@ -1003,6 +1005,7 @@ def addorder(request):
         order_info['order_id'] = order_id
         body=""
         shopping_cart = request.data["shopping_cart"]
+        log.info("[addorder] data=%s",str(shopping_cart))
         for temp in shopping_cart:
             shopping_cartid=temp["shopping_cartid"]
             shopping_cart_info = ShoppingCart.objects.get(shopping_cartid=shopping_cartid)
@@ -1216,11 +1219,11 @@ def getmyorder(request,user_id,order_status):
                     detail['srv_time'] = cart_info.srv_time
                     order_dict['detail'].append(detail)
                     log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
-                            str(detail["price"]),name,str(user_phone),address)
+                            str(detail["price"]/100),name,str(user_phone),address)
                     if pay_result:
                         '''
                         log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
-                            str(detail["price"]),name,str(user_phone),address)
+                            str(detail["price"]/100),name,str(user_phone),address)
                         sendordersms("7726",shop_info.shoper_phone,temp.order_id,detail['product_name'],detail["product_num"] \
                             ,detail["price"],name,user_phone,address,0)            
                         '''
@@ -1421,7 +1424,7 @@ def addusercomment(request):
             serializer = UserCommentSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
-                order_info = SaleOrder.objects.get(order_id = request.data['order_id'])
+                order_info = SaleOrder.objects.get(order_id = data['order_id'])
                 if order_info.order_status == 2:
                     order_info.order_status=3
                     order_info.save()
@@ -1431,6 +1434,8 @@ def addusercomment(request):
                 response['error_info'] = str(serializer.errors)
     except ArgumentException, e:           
         response['result'] = e.errors
+    except SaleOrder.DoesNotExist:
+        response['result']='订单不存在'
     except Exception,e:
         response['result'] = str(e)
 
@@ -1712,7 +1717,9 @@ def addshoppingcart(request):
 @api_view()
 def getmyshoppingcart(request,user_id):
     response =  OrderedDict()
+    data=[]
     try:
+        '''
         uid = ""
         key = ""
         addr_infos= []
@@ -1721,6 +1728,7 @@ def getmyshoppingcart(request,user_id):
         if uid<>user_id:
             raise Exception,"Permission Denied"
         checktoken(uid,key)
+        '''
         m1 = re.match(r'(^\d{1,11}$)',user_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:user_id") 
@@ -1730,7 +1738,6 @@ def getmyshoppingcart(request,user_id):
             response['result'] = 'success'
         else:
             response['result'] = '购物车为空'
-        data=[]
         for temp in cart_infos:
             detail=OrderedDict()
             detail['shopping_cartid'] = temp.shopping_cartid;
