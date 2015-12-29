@@ -995,6 +995,7 @@ def addorder(request):
         if int(uid)<>request.data["user_id"]:
             raise Exception,"Permission Denied"
         order_info={}
+        pay_type = request.data["pay_type"]
         order_info["user_id"] = request.data["user_id"]
         order_info["total"] = request.data["total"]
         order_info["real_total"] = request.data["real_total"]
@@ -1016,7 +1017,8 @@ def addorder(request):
             product_info.product_num = product_info.product_num - 1
             product_info.save()
             body=body+"|"+product_info.product_name
-        prepayid=unifiedorder(order_id,body,str(order_info["real_total"]))
+        if pay_type==0:
+            prepayid=unifiedorder(order_id,body,str(order_info["real_total"]))
         order_info["prepayid"] = prepayid
         serializer = OrderSerializer(data=order_info)
         if serializer.is_valid():
