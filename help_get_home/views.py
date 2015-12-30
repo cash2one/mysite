@@ -566,6 +566,7 @@ class UserViewSet(viewsets.ModelViewSet):
 **********************商品展示界面***********************
 
 '''
+'''
 @api_view()
 def getshopproduct(request,shop_id,sort_type,srv_sub_type,page_num,page_size):
     response =  OrderedDict()
@@ -599,6 +600,68 @@ def getshopproduct(request,shop_id,sort_type,srv_sub_type,page_num,page_size):
             product_info = ProductInfo.objects.filter(shop_id=shop_id,srv_sub_type__contains=srv_sub_type,verify_status=1,status=1).order_by(column_name[int(sort_type)])
         else:
             product_info =  ProductInfo.objects.filter(shop_id=shop_id,srv_sub_type__contains=srv_sub_type,verify_status=1,status=1)
+        if  int(page_num)==0  and int(page_size)==0:
+            page_size = product_info.count()
+            page_num = 1
+        if product_info:
+            p = Paginator(product_info,page_size)   
+            if int(page_num) > p.num_pages:    
+                response['result'] = '当前是最后一页,没有多余数据'
+            else:
+                serializer = ProductSerializer(p.page(page_num),many = True)
+                response['result'] = 'success'
+                response['data'] = serializer.data
+        else:
+            response['result'] = '此类商品还未上线，敬请期待'
+    except KeyError, e:
+        response['result'] = 'not authorization'
+    except ArgumentException, e:
+        response['result']  = e.errors
+    except Exception, e:
+        response['result'] = str(e)
+    finally:
+        if not response.has_key('data'):
+            response['data'] = product_info
+        json= JSONRenderer().render(response)
+        return HttpResponse(json)
+        '''
+'''
+**********************商品相关接口************************
+'''
+'''
+**********************商品展示界面***********************
+
+'''
+@api_view()
+def getshopproduct(request,shop_id,sort_type,page_num,page_size):
+    response =  OrderedDict()
+    column_name = ['composite','-sales','-evaluate']
+    try:
+        product_info = []
+        user_id = ""
+        key = ""
+        user_id = request.META['HTTP_USERID']
+        key = request.META['HTTP_KEY']
+        checktoken(user_id,key)
+        m1 = re.match(r'(^\d{1,2}$)',shop_id)
+        if m1 == None  :
+            raise ArgumentException("invalid argument:shop_id") 
+
+        m2 = re.match(r'(^\d{1,2}$)',sort_type)
+        if m2 == None  :
+            raise ArgumentException("invalid argument:sort_type") 
+
+        m4= re.match(r'(^\d{1,2}$)',page_num)
+        if m4 == None  :
+            raise ArgumentException("invalid argument:page_num") 
+
+        m5 = re.match(r'(^\d{1,2}$)',page_size)
+        if m5 == None  :
+            raise ArgumentException("invalid argument:page_size") 
+        if int(sort_type) <>  0:
+            product_info = ProductInfo.objects.filter(shop_id=shop_id,verify_status=1,status=1).order_by(column_name[int(sort_type)])
+        else:
+            product_info =  ProductInfo.objects.filter(shop_id=shop_id,verify_status=1,status=1)
         if  int(page_num)==0  and int(page_size)==0:
             page_size = product_info.count()
             page_num = 1
@@ -1497,7 +1560,7 @@ def getusercomment(request,product_id):
                 comment_dict = OrderedDict()
                 user_info = UserInfo.objects.get(user_id=temp.user_id)
                 comment_dict['comment_id'] = temp.id
-                comment_dict['user_nick'] = user_info.nick
+                comment_dict['user_nick'] = user_info.phone
                 comment_dict['match_desc'] = temp.match_desc
                 comment_dict['comment'] = temp.comment
                 comment_dict['last_modify'] = temp.last_modify.strftime("%Y-%M-%d")
