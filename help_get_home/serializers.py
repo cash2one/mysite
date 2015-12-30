@@ -88,7 +88,7 @@ class LicenseShoperSerializer(serializers.HyperlinkedModelSerializer):
 class ProductSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ProductInfo
-        fields = ('product_id','product_name','shop_id','url','price','product_num','product_desc','product_desc_url','begin_time','end_time','evaluate')
+        fields = ('product_id','product_name','shop_id','url','price','money','product_num','product_desc','product_desc_url','begin_time','end_time','evaluate')
 class AreaSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = AreaInfo
