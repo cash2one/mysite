@@ -44,6 +44,8 @@ from collections import OrderedDict
 from sendsms import sendsms
 import urllib,json
 from urllib import urlencode
+from alipay import Alipay
+
 '''
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -95,7 +97,7 @@ def checkcode(phone,type,code):
         return False
 """
 *=======================================================================
-*修改订单状态
+*微信支付修改订单状态
 *=======================================================================
 """
 def queryorderstatus(out_trade_no):
@@ -109,6 +111,22 @@ def queryorderstatus(out_trade_no):
     if query_result["result_code"] != "SUCCESS":
         return flag
     if query_result["trade_state"] == "SUCCESS":
+        flag = True
+        order_info = SaleOrder.objects.get(order_id=out_trade_no,status=1)
+        order_info.order_status=1
+        order_info.save()
+    return flag
+"""
+*=======================================================================
+*支付宝支付修改订单状态
+*=======================================================================
+"""
+def alipayorderstatus(out_trade_no):
+    ali_pay = Alipay("2088021439511374","7uys2zn93yhgult1djhjfuw3xa1wqtly","zhangchuhu@163.com")
+    query_result = ali_pay.single_trade_query(out_trade_no='order-20151229162633-5a0evswy')
+    print "==============pay_result=%s================" % query_result
+    flag = False
+    if query_result["trade_status"] == "TRADE_SUCCESS":
         flag = True
         order_info = SaleOrder.objects.get(order_id=out_trade_no,status=1)
         order_info.order_status=1
@@ -1178,7 +1196,10 @@ def getmyorder(request,user_id,order_status):
                 order_dict = OrderedDict()
                 pay_result = False
                 if temp.order_status==0:
-                    pay_result = queryorderstatus(temp.order_id)
+                    if temp.pay_type==0:
+                        pay_result = queryorderstatus(temp.order_id)
+                    if temp.pay_type==1:
+                        pay_result = alipayorderstatus(temp.order_id)
                     if not pay_result:
                         continue
                 order_dict['order_id'] = temp.order_id
