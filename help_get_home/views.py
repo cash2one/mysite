@@ -1653,9 +1653,7 @@ def getuserinfo(request,user_id):
         addr_info = AddrInfo.objects.get(user_id=user_id,status=1,addr_type=1)
         user_info = UserInfo.objects.get(user_id=user_id,status=1)
         data["head_url"] = user_info.head_url
-        data["name"] = addr_info.name
-        data["address"] = addr_info.address
-        data["phone"] = addr_info.telephone
+        data["name"] = user_info.phone
         data["points"] = 0
         response['result'] = 'success'
         response['data'] = data
