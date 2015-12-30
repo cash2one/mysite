@@ -567,7 +567,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 '''
 @api_view()
-def getshopproduct(request,shop_id,sort_type,page_num,page_size):
+def getshopproduct(request,shop_id,sort_type,srv_sub_type,page_num,page_size):
     response =  OrderedDict()
     column_name = ['composite','-sales','-evaluate']
     try:
@@ -584,18 +584,21 @@ def getshopproduct(request,shop_id,sort_type,page_num,page_size):
         m2 = re.match(r'(^\d{1,2}$)',sort_type)
         if m2 == None  :
             raise ArgumentException("invalid argument:sort_type") 
-
-        m3 = re.match(r'(^\d{1,2}$)',page_num)
+        m3 = re.match(r'(^\d{1,2}$)',srv_sub_type)
         if m3 == None  :
+            raise ArgumentException("invalid argument:srt_sub_type") 
+
+        m4= re.match(r'(^\d{1,2}$)',page_num)
+        if m4 == None  :
             raise ArgumentException("invalid argument:page_num") 
 
-        m4 = re.match(r'(^\d{1,2}$)',page_size)
-        if m4 == None  :
+        m5 = re.match(r'(^\d{1,2}$)',page_size)
+        if m5 == None  :
             raise ArgumentException("invalid argument:page_size") 
         if int(sort_type) <>  0:
-            product_info = ProductInfo.objects.filter(shop_id=shop_id,verify_status=1,status=1).order_by(column_name[int(sort_type)])
+            product_info = ProductInfo.objects.filter(shop_id=shop_id,srv_sub_type__contains=srv_sub_type,verify_status=1,status=1).order_by(column_name[int(sort_type)])
         else:
-            product_info =  ProductInfo.objects.filter(shop_id=shop_id,verify_status=1,status=1)
+            product_info =  ProductInfo.objects.filter(shop_id=shop_id,srv_sub_type__contains=srv_sub_type,verify_status=1,status=1)
         if  int(page_num)==0  and int(page_size)==0:
             page_size = product_info.count()
             page_num = 1
