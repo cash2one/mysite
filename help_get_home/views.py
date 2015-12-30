@@ -45,6 +45,7 @@ from sendsms import sendsms
 import urllib,json
 from urllib import urlencode
 from alipay import Alipay
+from django.db.models import Avg
 
 '''
 reload(sys)
@@ -1517,9 +1518,15 @@ def addusercomment(request):
             raise Exception,"Permission Denied"
         '''
         for data in request.data:
+            product_id = data['product_id']
             serializer = UserCommentSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
+                evaluate=UserComment.objects.filter(product_id=product_id).aggregate(Avg('match_desc'))
+                product_info = ProductInfo.objects.get(product_id=product_id)
+                product_info.evaluate=evaluate['match_desc__avg']
+                product_info.save()
+
                 order_info = SaleOrder.objects.get(order_id = data['order_id'])
                 if order_info.order_status == 2:
                     order_info.order_status=3
