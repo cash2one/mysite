@@ -1196,6 +1196,8 @@ def getmyorder(request,user_id,order_status):
         '''
         if int(order_status)==1:
             order_infos = SaleOrder.objects.filter(user_id=user_id,order_status__in=[0,1],status=1)
+        elif int(order_status)==3:
+            order_infos = SaleOrder.objects.filter(user_id=user_id,order_status__in=[2,3],status=1)
         else:
             order_infos = SaleOrder.objects.filter(user_id=user_id,order_status=order_status,status=1)
         order_list=[]
