@@ -1037,7 +1037,7 @@ def addorder(request):
             body=body+"|"+product_info.product_name
         if pay_type==0:
             prepayid=unifiedorder(order_id,body,str(order_info["real_total"]))
-        order_info["prepayid"] = prepayid
+            order_info["prepayid"] = prepayid
         serializer = OrderSerializer(data=order_info)
         if serializer.is_valid():
             serializer.save()
