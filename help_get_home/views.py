@@ -683,27 +683,32 @@ def getmyshop(request,user_id):
 '''
 
 @api_view()
-def getproductbyshop(request,shop_id,page_num,page_size):
+def getproductbyshop(request,shop_id,srv_sub_type,page_num,page_size):
     response =  OrderedDict()
     try:
         product_info = []
+        '''
         user_id = ""
         key = ""
         user_id = request.META['HTTP_USERID']
         key = request.META['HTTP_KEY']
         checktoken(user_id,key)
+        '''
         m1 = re.match(r'(^\d{1,2}$)',shop_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:shop_id") 
 
-        m2 = re.match(r'(^\d{1,2}$)',page_num)
+        m2 = re.match(r'(^\d{1,2}$)',srv_sub_type)
         if m2 == None  :
+            raise ArgumentException("invalid argument:srv_sub_type") 
+        m3 = re.match(r'(^\d{1,2}$)',page_num)
+        if m3 == None  :
             raise ArgumentException("invalid argument:page_num") 
 
-        m3 = re.match(r'(^\d{1,2}$)',page_size)
-        if m3 == None  :
+        m4 = re.match(r'(^\d{1,2}$)',page_size)
+        if m4 == None  :
             raise ArgumentException("invalid argument:page_size") 
-        product_info = ProductInfo.objects.filter(shop_id=shop_id,verify_status=1,status=1)
+        product_info = ProductInfo.objects.filter(shop_id=shop_id,srv_sub_type__contains=srv_sub_type,verify_status=1,status=1)
         if  int(page_num)==0  and int(page_size)==0:
             page_size = product_info.count()
             page_num = 1
