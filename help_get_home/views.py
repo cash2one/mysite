@@ -116,6 +116,12 @@ def queryorderstatus(out_trade_no):
         order_info = SaleOrder.objects.get(order_id=out_trade_no,status=1)
         order_info.order_status=1
         order_info.save()
+        shopping_cart = ShoppingCart.objects.filter(order_id=out_trade_no)
+        for cart_info in shopping_cart:
+            order_num=ShoppingCart.objects.filter(shop_id=cart_info.shop_id,status=0).count()
+            shop_info = ShopInfo.objects.get(shop_id=cart_info.shop_id)
+            shop_info.order_num=order_num
+            shop_info.save()
     return flag
 """
 *=======================================================================
@@ -132,6 +138,12 @@ def alipayorderstatus(out_trade_no):
         order_info = SaleOrder.objects.get(order_id=out_trade_no,status=1)
         order_info.order_status=1
         order_info.save()
+        shopping_cart = ShoppingCart.objects.filter(order_id=out_trade_no)
+        for cart_info in shopping_cart:
+            order_num=ShoppingCart.objects.filter(shop_id=cart_info.shop_id,status=0).count()
+            shop_info = ShopInfo.objects.get(shop_id=cart_info.shop_id)
+            shop_info.order_num=order_num
+            shop_info.save()
     return flag
 """
 *=======================================================================
@@ -1259,11 +1271,12 @@ def getmyorder(request,user_id,order_status):
             raise Exception,"Permission Denied"
         '''
         if int(order_status)==1:
-            order_infos = SaleOrder.objects.filter(user_id=user_id,order_status__in=[0,1],status=1)
+            order_infos = SaleOrder.objects.filter(user_id=user_id,order_status__in=[0,1],status=1).order_by('-m_time')
+
         elif int(order_status)==3:
-            order_infos = SaleOrder.objects.filter(user_id=user_id,order_status__in=[2,3],status=1)
+            order_infos = SaleOrder.objects.filter(user_id=user_id,order_status__in=[2,3],status=1).order_by('-m_time')
         else:
-            order_infos = SaleOrder.objects.filter(user_id=user_id,order_status=order_status,status=1)
+            order_infos = SaleOrder.objects.filter(user_id=user_id,order_status=order_status,status=1).order_by('-m_time')
         order_list=[]
         if order_infos:
             for temp in order_infos:
@@ -1322,13 +1335,13 @@ def getmyorder(request,user_id,order_status):
                         log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]/100),name,str(user_phone),address)
                         sendordersms("7726",shop_info.shoper_phone,temp.order_id,detail['product_name'],detail["product_num"] \
-                            ,detail["price"],name,user_phone,address,0)            
+                            ,detail["price"]/100,name,user_phone,address,0)            
                         '''
                         user_info = UserInfo.objects.get(user_id=temp.user_id)
                         log.info("[getmyorder] to_phone=%s,order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",user_info.phone,temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
                         sendordersms("7743",user_info.phone,temp.order_id,detail['product_name'],detail["product_num"] \
-                            ,detail["price"],name,user_phone,address,detail['telephone'])            
+                            ,detail["price"]/100,name,user_phone,address,detail['telephone'])            
                 order_list.append(order_dict)
             response['result'] = 'success'
             response['data'] = order_list
@@ -1518,7 +1531,9 @@ def addusercomment(request):
             raise Exception,"Permission Denied"
         '''
         for data in request.data:
+            log.info("[addusercommnet] comment=%s",str(data))
             product_id = data['product_id']
+            shop_id = data['shop_id']
             serializer = UserCommentSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -1526,7 +1541,14 @@ def addusercomment(request):
                 product_info = ProductInfo.objects.get(product_id=product_id)
                 product_info.evaluate=evaluate['match_desc__avg']
                 product_info.save()
-
+                srv_attitude=UserComment.objects.filter(shop_id=shop_id).aggregate(Avg('srv_attitude'))
+                srv_speed=UserComment.objects.filter(shop_id=shop_id).aggregate(Avg('srv_speed'))
+                srv_contents=UserComment.objects.filter(shop_id=shop_id).aggregate(Avg('srv_contents'))
+                shop_info = ShopInfo.objects.get(shop_id=shop_id)
+                shop_info.srv_attitude=srv_attitude['srv_attitude__avg']
+                shop_info.srv_speed = srv_speed["srv_speed__avg"]
+                shop_info.srv_contents = srv_contents["srv_contents__avg"]
+                shop_info.save()
                 order_info = SaleOrder.objects.get(order_id = data['order_id'])
                 if order_info.order_status == 2:
                     order_info.order_status=3
@@ -1991,6 +2013,7 @@ def getproductstock(request,product_id,srv_time):
             raise Exception,"Permission Denied"
         checktoken(uid,key)
         '''
+        log.info("[getproductstock] product_id=%s,srv_time=%s",product_id,srv_time) 
         m1 = re.match(r'(^\d{1,11}$)',product_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:user_id") 
