@@ -579,7 +579,6 @@ class UserViewSet(viewsets.ModelViewSet):
 **********************商品展示界面***********************
 
 '''
-'''
 @api_view()
 def getshopproduct(request,shop_id,sort_type,srv_sub_type,page_num,page_size):
     response =  OrderedDict()
@@ -638,12 +637,12 @@ def getshopproduct(request,shop_id,sort_type,srv_sub_type,page_num,page_size):
         json= JSONRenderer().render(response)
         return HttpResponse(json)
         '''
-'''
 **********************商品相关接口************************
 '''
 '''
 **********************商品展示界面***********************
 
+'''
 '''
 @api_view()
 def getshopproduct(request,shop_id,sort_type,page_num,page_size):
@@ -699,6 +698,7 @@ def getshopproduct(request,shop_id,sort_type,page_num,page_size):
             response['data'] = product_info
         json= JSONRenderer().render(response)
         return HttpResponse(json)
+'''
 '''
 ******************************商品详细介绍界面*******************************
 '''
@@ -1577,11 +1577,13 @@ def getusercomment(request,product_id):
         m1 = re.match(r'(^\d{1,11}$)',product_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:user_id") 
+        '''
         uid = ""
         key = ""
         uid = request.META['HTTP_USERID']
         key = request.META['HTTP_KEY']
         checktoken(uid,key)
+        '''
         user_comments = UserComment.objects.filter(product_id=product_id,status=1)
         comment_list=[]
         if user_comments:
@@ -1592,7 +1594,7 @@ def getusercomment(request,product_id):
                 comment_dict['user_nick'] = user_info.phone
                 comment_dict['match_desc'] = temp.match_desc
                 comment_dict['comment'] = temp.comment
-                comment_dict['last_modify'] = temp.last_modify.strftime("%Y-%M-%d")
+                comment_dict['last_modify'] = temp.last_modify.strftime("%Y-%m-%d")
                 comment_list.append(comment_dict)
             response['result'] = 'success'
             response['data'] = comment_list
