@@ -584,12 +584,16 @@ def getshopproduct(request,shop_id,sort_type,srv_sub_type,page_num,page_size):
     response =  OrderedDict()
     column_name = ['composite','-sales','-evaluate']
     try:
+        log.info("getshopproduct")
+        log.info("[getshopproduct] shop_id=%s,sort_type=%s,srv_sub_type=%s",shop_id,sort_type,srv_sub_type)
         product_info = []
+        '''
         user_id = ""
         key = ""
         user_id = request.META['HTTP_USERID']
         key = request.META['HTTP_KEY']
         checktoken(user_id,key)
+        '''
         m1 = re.match(r'(^\d{1,2}$)',shop_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:shop_id") 
@@ -773,6 +777,7 @@ def getproductbyshop(request,shop_id,srv_sub_type,page_num,page_size):
         key = request.META['HTTP_KEY']
         checktoken(user_id,key)
         '''
+        log.info("[getproductbyshop] ")
         m1 = re.match(r'(^\d{1,2}$)',shop_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:shop_id") 
@@ -1807,6 +1812,7 @@ def uploadheadimg(request):
 def addshoppingcart(request):
     response =  OrderedDict()
     try:
+        log.info("addshoppingcart data=%s",str(request.data))
         uid = ""
         key = ""
         uid = request.META['HTTP_USERID']
@@ -1815,6 +1821,25 @@ def addshoppingcart(request):
         if int(uid)<>request.data["user_id"]:
             raise Exception,"Permission Denied"
         shopping_cart_info = request.data
+        product_id = shopping_cart_info["product_id"]
+        product_num = shopping_cart_info["product_num"]
+        srv_time = shopping_cart_info["srv_time"]
+        product_stock = DateStock.objects.filter(product_id=product_id,special_date=srv_time)
+        if product_stock.count()==0 :
+            product_info = ProductInfo.objects.get(product_id=product_id)
+            if product_info.product_num < product_num:
+                raise Exception,"库存不足"
+            init_stock=DateStock(product_id=product_id,special_date=srv_time,product_num=product_info.product_num - product_num,sales=product_num,created=datetime.datetime.now())
+            init_stock.save()
+        else:
+            if product_stock[0].product_num<product_num:
+                raise Exception,"库存不足"
+            else:
+                new_stock = DateStock.objects.get(product_id=product_id,special_date=srv_time)
+                new_stock.product_num= product_stock[0].product_num-product_num
+                log.info("new stock=%d",product_stock[0].product_num)
+                new_stock.sales=product_stock[0].sales+product_num
+                new_stock.save()
         shopping_cart_info['shopping_cartid'] ="shoppingcart-" +  Common_util_pub().createOrderId()
         serializer = ShoppingCartSerializer(data=shopping_cart_info)
         if serializer.is_valid():
@@ -1826,7 +1851,7 @@ def addshoppingcart(request):
     except KeyError, e:
         response['result'] = 'not authorization'
     except ArgumentException, e:           
-        response['result'] = e.errors
+        response['result'] = str(e)
     except Exception,e:
         response['result'] = str(e)
 
@@ -2008,7 +2033,6 @@ def getproductstock(request,product_id,srv_time):
         '''
         uid = ""
         key = ""
-        addr_infos= []
         uid = request.META['HTTP_USERID']
         key = request.META['HTTP_KEY']
         if uid<>user_id:
@@ -2019,13 +2043,12 @@ def getproductstock(request,product_id,srv_time):
         m1 = re.match(r'(^\d{1,11}$)',product_id)
         if m1 == None  :
             raise ArgumentException("invalid argument:user_id") 
-        srv_time = srv_time + " 00:00:00"
-        product_stock = ProductStock.objects.get(product_id=product_id,start_time=srv_time)
+        product_stock = DateStock.objects.get(product_id=product_id,special_date=srv_time)
         response['result'] = 'success'
-        response['left_num'] = product_stock.left_num
+        response['left_num'] = product_stock.product_num
     except KeyError, e:
         response['result'] = 'not authorization'
-    except ProductStock.DoesNotExist, e :
+    except DateStock.DoesNotExist, e :
         product_info = ProductInfo.objects.get(product_id=product_id)
         response['result'] = 'success'
         response['left_num'] = product_info.product_num
