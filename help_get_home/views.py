@@ -118,6 +118,9 @@ def queryorderstatus(out_trade_no):
         order_info.save()
         shopping_cart = ShoppingCart.objects.filter(order_id=out_trade_no)
         for cart_info in shopping_cart:
+            save_cart=ShoppingCart.objects.get(shopping_cartid=cart_info.shopping_cartid)
+            save_cart.status=0
+            save_cart.save()
             order_num=ShoppingCart.objects.filter(shop_id=cart_info.shop_id,status=0).count()
             shop_info = ShopInfo.objects.get(shop_id=cart_info.shop_id)
             shop_info.order_num=order_num
@@ -130,9 +133,11 @@ def queryorderstatus(out_trade_no):
 """
 def alipayorderstatus(out_trade_no):
     ali_pay = Alipay("2088021439511374","7uys2zn93yhgult1djhjfuw3xa1wqtly","zhangchuhu@163.com")
-    query_result = ali_pay.single_trade_query(out_trade_no='order-20151229162633-5a0evswy')
+    query_result = ali_pay.single_trade_query(out_trade_no=out_trade_no)
     print "==============pay_result=%s================" % query_result
     flag = False
+    if not query_result.has_key("trade_status"):
+        return flag
     if query_result["trade_status"] == "TRADE_SUCCESS":
         flag = True
         order_info = SaleOrder.objects.get(order_id=out_trade_no,status=1)
@@ -140,6 +145,9 @@ def alipayorderstatus(out_trade_no):
         order_info.save()
         shopping_cart = ShoppingCart.objects.filter(order_id=out_trade_no)
         for cart_info in shopping_cart:
+            save_cart=ShoppingCart.objects.get(shopping_cartid=cart_info.shopping_cartid)
+            save_cart.status=0
+            save_cart.save()
             order_num=ShoppingCart.objects.filter(shop_id=cart_info.shop_id,status=0).count()
             shop_info = ShopInfo.objects.get(shop_id=cart_info.shop_id)
             shop_info.order_num=order_num
@@ -582,6 +590,7 @@ class UserViewSet(viewsets.ModelViewSet):
 @api_view()
 def getshopproduct(request,shop_id,sort_type,srv_sub_type,page_num,page_size):
     response =  OrderedDict()
+    log.info("[getshopproduct] shop_id=%s,sort_type=%s,srv_sub_type=%s,page_num=%s,page_size=%s",shop_id,sort_type,srv_sub_type,page_num,page_size)
     column_name = ['composite','-sales','-evaluate']
     try:
         log.info("getshopproduct")
@@ -1118,7 +1127,7 @@ def addorder(request):
             shopping_cartid=temp["shopping_cartid"]
             shopping_cart_info = ShoppingCart.objects.get(shopping_cartid=shopping_cartid)
             shopping_cart_info.order_id=order_id
-            shopping_cart_info.status=0
+            #shopping_cart_info.status=0
             shopping_cart_info.save()
             product_info = ProductInfo.objects.get(product_id = shopping_cart_info.product_id)
             product_info.product_num = product_info.product_num - 1
@@ -1334,19 +1343,19 @@ def getmyorder(request,user_id,order_status):
                     detail['srv_time'] = cart_info.srv_time
                     order_dict['detail'].append(detail)
                     log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
-                            str(detail["price"]/100),name,str(user_phone),address)
+                            str(float(detail["price"]/100)),name,str(user_phone),address)
                     if pay_result:
                         '''
                         log.info("[getmyorder] order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]/100),name,str(user_phone),address)
                         sendordersms("7726",shop_info.shoper_phone,temp.order_id,detail['product_name'],detail["product_num"] \
-                            ,detail["price"]/100,name,user_phone,address,0)            
+                            ,float(detail["price"]/100.0),name,user_phone,address,0)            
                         '''
                         user_info = UserInfo.objects.get(user_id=temp.user_id)
                         log.info("[getmyorder] to_phone=%s,order_id=%s,product_name=%s,product_num=%s,price=%s,name=%s,user_phone=%s,address=%s",user_info.phone,temp.order_id,detail['product_name'],str(detail["product_num"]), \
                             str(detail["price"]),name,str(user_phone),address)
                         sendordersms("7743",user_info.phone,temp.order_id,detail['product_name'],detail["product_num"] \
-                            ,detail["price"]/100,name,user_phone,address,detail['telephone'])            
+                            ,float(detail["price"]/100.0),name,user_phone,address,detail['telephone'])            
                 order_list.append(order_dict)
             response['result'] = 'success'
             response['data'] = order_list
@@ -1589,7 +1598,7 @@ def getusercomment(request,product_id):
         key = request.META['HTTP_KEY']
         checktoken(uid,key)
         '''
-        user_comments = UserComment.objects.filter(product_id=product_id,status=1)
+        user_comments = UserComment.objects.filter(product_id=product_id,status=1).order_by('-last_modify')
         comment_list=[]
         if user_comments:
             for temp in user_comments:
@@ -1822,22 +1831,26 @@ def addshoppingcart(request):
             raise Exception,"Permission Denied"
         shopping_cart_info = request.data
         product_id = shopping_cart_info["product_id"]
-        product_num = shopping_cart_info["product_num"]
+        product_num = int(shopping_cart_info["product_num"])
         srv_time = shopping_cart_info["srv_time"]
         product_stock = DateStock.objects.filter(product_id=product_id,special_date=srv_time)
         if product_stock.count()==0 :
             product_info = ProductInfo.objects.get(product_id=product_id)
             if product_info.product_num < product_num:
+                log.info("add shopping cart .product_num =%d,buy_num=%s",product_info.product_num,product_num)
                 raise Exception,"库存不足"
             init_stock=DateStock(product_id=product_id,special_date=srv_time,product_num=product_info.product_num - product_num,sales=product_num,created=datetime.datetime.now())
             init_stock.save()
         else:
             if product_stock[0].product_num<product_num:
+                log.info("test2")
                 raise Exception,"库存不足"
             else:
                 new_stock = DateStock.objects.get(product_id=product_id,special_date=srv_time)
                 new_stock.product_num= product_stock[0].product_num-product_num
                 log.info("new stock=%d",product_stock[0].product_num)
+                if product_stock[0].sales is None:
+                    product_stock[0].sales=0
                 new_stock.sales=product_stock[0].sales+product_num
                 new_stock.save()
         shopping_cart_info['shopping_cartid'] ="shoppingcart-" +  Common_util_pub().createOrderId()
@@ -1892,6 +1905,7 @@ def getmyshoppingcart(request,user_id):
             detail=OrderedDict()
             detail['shopping_cartid'] = temp.shopping_cartid;
             detail['product_id'] = temp.product_id
+            detail['srv_time'] = temp.srv_time
             product_info = ProductInfo.objects.get(product_id=temp.product_id)
             detail['product_url'] = product_info.url
             detail['product_name'] = product_info.product_name
