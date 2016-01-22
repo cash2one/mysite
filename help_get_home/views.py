@@ -174,6 +174,24 @@ def querysuborderstatus(out_trade_no):
         order_info.order_status=1
         order_info.save()
     return flag
+"""
+*=======================================================================
+*支付宝支付修改子订单状态
+*=======================================================================
+"""
+def alipaysuborderstatus(out_trade_no):
+    ali_pay = Alipay("2088021439511374","7uys2zn93yhgult1djhjfuw3xa1wqtly","zhangchuhu@163.com")
+    query_result = ali_pay.single_trade_query(out_trade_no=out_trade_no)
+    print "==============pay_result=%s================" % query_result
+    flag = False
+    if not query_result.has_key("trade_status"):
+        return flag
+    if query_result["trade_status"] == "TRADE_SUCCESS":
+        flag = True
+        order_info = SaleReorder.objects.get(order_id=out_trade_no,status=1)
+        order_info.order_status=1
+        order_info.save()
+    return flag
 class PictureForm(forms.Form):   
     imagefile = forms.ImageField()  
 def image(request,name):
@@ -1172,24 +1190,21 @@ def reorder(request):
         if int(uid)<>request.data["user_id"]:
             raise Exception,"Permission Denied"
         '''
-        par_orderid = request.data["par_orderid"]
+        shopping_cartid = request.data["shopping_cartid"]
         total = request.data["total"]
-        order_info = SaleReorder.objects.filter(par_orderid=par_orderid)
+        order_info = SaleReorder.objects.filter(shopping_cartid=shopping_cartid)
         if  order_info.count()==0 :
             reorder_info = {}
-            reorder_info['par_orderid'] = par_orderid;
+            reorder_info['shopping_cartid'] = shopping_cartid;
             reorder_info['order_id'] = "order-" +  Common_util_pub().createOrderId()
             reorder_info["total"] = request.data["total"]
             reorder_info["pay_type"] = request.data["pay_type"]
-            cart_infos = ShoppingCart.objects.filter(order_id=par_orderid)
-            body = ""
-            for temp in cart_infos:
-                product_info = ProductInfo.objects.get(product_id = temp.product_id)
-                if body!="":
-                    body=body+"|"
-                body=body+product_info.product_name
-            prepayid=unifiedorder(reorder_info['order_id'], body,str(total))
-            reorder_info["prepayid"] = prepayid
+            if reorder_info["pay_type"] == 0:
+                cart_infos = ShoppingCart.objects.get(shopping_cartid=shopping_cartid)
+                product_info = ProductInfo.objects.get(product_id = cart_infos.product_id)
+                body=product_info.product_name
+                prepayid=unifiedorder(reorder_info['order_id'], body,str(total))
+                reorder_info["prepayid"] = prepayid
             serializer = ReorderSerializer(data=reorder_info)
             if serializer.is_valid():
                 serializer.save()
@@ -1307,6 +1322,7 @@ def getmyorder(request,user_id,order_status):
                 order_dict['order_status'] = temp.order_status  
                 order_dict['real_total'] = temp.real_total
                 #是否有子订单
+                '''
                 reorder_info = SaleReorder.objects.filter(par_orderid=temp.order_id)
                 if reorder_info.count()!=0:
                     if querysuborderstatus(reorder_info[0].order_id):
@@ -1315,6 +1331,7 @@ def getmyorder(request,user_id,order_status):
                         order_dict['reorder_price'] = 0
                 else:
                     order_dict['reorder_price'] = 0
+                '''
                 addr_info = AddrInfo.objects.filter(id=temp.address_info)
                 address=""
                 name=""
@@ -1331,6 +1348,30 @@ def getmyorder(request,user_id,order_status):
                 for cart_info in shopping_cart:
                     detail = OrderedDict()
                     product_info = ProductInfo.objects.get(product_id=cart_info.product_id)
+                    detail['shopping_cartid'] = cart_info.shopping_cartid
+                    if product_info.product_type == 2:
+                        reorder_info = SaleReorder.objects.filter(shopping_cartid=cart_info.shopping_cartid)
+                        if reorder_info.count() <> 0:
+                            pay_result = False
+                            if reorder_info[0].order_status == 0:
+                                if temp.pay_type==0:
+                                    pay_result = querysuborderstatus(reorder_info[0].order_id)
+                                if temp.pay_type==1:
+                                    pay_result = alipaysuborderstatus(reorder_info[0].order_id)
+                            if pay_result or reorder_info[0].order_status==1:
+                                detail['reorder_price'] = reorder_info[0].total
+                                detail['reorder_status'] = 1
+                            else:
+                                detail['reorder_status'] = 0
+                                detail['reorder_price'] = 0
+                        else:
+                            detail['reorder_status'] = 0
+                            detail['reorder_price'] = 0
+
+                    else:
+                        detail['reorder_status'] = 2
+                        detail['reorder_price'] = 0
+                    detail['shopping_cartid'] = cart_info.shopping_cartid
                     detail['product_id'] = product_info.product_id
                     detail['product_url'] = product_info.url
                     detail['product_name'] = product_info.product_name

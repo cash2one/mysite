@@ -60,6 +60,22 @@ class AddrInfo(models.Model):
         db_table = 'addr_info'
 
 
+class AppInfo(models.Model):
+    id = models.BigIntegerField(primary_key=True)
+    name = models.CharField(max_length=45, blank=True)
+    type = models.CharField(max_length=45, blank=True)
+    ext_info = models.CharField(max_length=45, blank=True)
+    real_name = models.CharField(max_length=45, blank=True)
+    random_name = models.CharField(max_length=45, blank=True)
+    version = models.CharField(max_length=45, blank=True)
+    updated = models.DateTimeField(blank=True, null=True)
+    created_by = models.BigIntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'app_info'
+
+
 class AreaInfo(models.Model):
     area_id = models.BigIntegerField(primary_key=True)
     area = models.CharField(max_length=500, blank=True)
@@ -287,6 +303,24 @@ class ImageInfo(models.Model):
         db_table = 'image_info'
 
 
+class MessageInfo(models.Model):
+    id = models.BigIntegerField(primary_key=True)
+    user_id = models.BigIntegerField(blank=True, null=True)
+    username = models.CharField(max_length=45, blank=True)
+    mobile = models.CharField(max_length=45, blank=True)
+    order_id = models.CharField(max_length=45, blank=True)
+    tpl_id = models.IntegerField(blank=True, null=True)
+    type = models.IntegerField(blank=True, null=True)
+    content = models.CharField(max_length=512, blank=True)
+    result = models.CharField(max_length=45, blank=True)
+    created = models.DateTimeField(blank=True, null=True)
+    remark = models.CharField(max_length=45, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'message_info'
+
+
 class ProductInfo(models.Model):
     product_id = models.IntegerField(primary_key=True)
     product_name = models.CharField(max_length=45, blank=True)
@@ -397,7 +431,7 @@ class SaleOrder(models.Model):
 
 class SaleReorder(models.Model):
     order_id = models.CharField(primary_key=True, max_length=64)
-    par_orderid = models.CharField(max_length=64)
+    shopping_cartid = models.CharField(unique=True, max_length=64)
     prepayid = models.CharField(max_length=256, blank=True)
     total = models.IntegerField()
     pay_type = models.IntegerField()

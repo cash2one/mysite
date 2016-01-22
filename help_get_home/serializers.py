@@ -140,7 +140,7 @@ class ReorderSerializer(serializers.HyperlinkedModelSerializer):
     m_time = serializers.DateTimeField(required=False,default = datetime.datetime.now)
     class Meta:
         model = SaleReorder
-        fields = ('order_id','par_orderid','prepayid', \
+        fields = ('order_id','shopping_cartid','prepayid', \
                   'total','order_status',   \
                   'pay_type','status','m_time'
                   )
